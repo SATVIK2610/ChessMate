@@ -1,0 +1,9 @@
+.contain{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.contain p{
+    padding: 0px;
+}

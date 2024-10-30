@@ -1,0 +1,46 @@
+.flex{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.main-div{
+    background-color: rgba(75, 72, 72, 0.517);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+img{
+    height: 140px;
+    width: 100px;
+}
+
+.content{
+    color: white;
+}
+
+.inp{
+    padding: 8px;
+    width: 93.5%;
+    border-radius: 5px;
+    font-size: medium;
+    margin: 5px;
+}
+
+.btn{
+    font-size: medium;
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+a{
+    cursor: pointer;
+}
+a:hover{
+    text-decoration: underline;
+    /* color: #99d459; */
+}
