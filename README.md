@@ -7,9 +7,9 @@ ChessMate is an interactive chess platform developed using React and Socket.io, 
 * **Comprehensive Chess Mechanics**: Supports castling, en passant, pawn promotion, and more.
 * **Responsive UI**: Optimized for a smooth and responsive experience across all devices.
 ## Technologies Used
-**Frontend**: React, TypeScript, CSS
-**Backend**: Node.js, Express, Socket.io
-**Utilities**: Concurrently for simultaneous server and client start
+* **Frontend**: React, TypeScript, CSS
+* **Backend**: Node.js, Express, Socket.io
+* **Utilities**: Concurrently for simultaneous server and client start
 
 ## Prerequisites
 Node.js and npm (Node Package Manager) installed. Download Node.js
