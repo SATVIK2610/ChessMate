@@ -2,10 +2,10 @@
 ChessMate is an interactive chess platform developed using React and Socket.io, enabling real-time multiplayer games. Create and join rooms with unique IDs for private matches, experience authentic chess mechanics, and enjoy low-latency gameplay optimized for responsiveness across devices.
 
 ## Features
-Real-time Multiplayer Chess: Play chess games with friends in real time.
-Room Creation and Join Functionality: Create or join private matches using unique room IDs.
-Comprehensive Chess Mechanics: Supports castling, en passant, pawn promotion, and more.
-Responsive UI: Optimized for a smooth and responsive experience across all devices.
+* **Real-time Multiplayer Chess**: Play chess games with friends in real time.
+* **Room Creation and Join Functionality**: Create or join private matches using unique room IDs.
+* **Comprehensive Chess Mechanics**: Supports castling, en passant, pawn promotion, and more.
+* **Responsive UI**: Optimized for a smooth and responsive experience across all devices.
 ## Technologies Used
 **Frontend**: React, TypeScript, CSS
 **Backend**: Node.js, Express, Socket.io
