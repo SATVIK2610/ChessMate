@@ -11,23 +11,20 @@ ChessMate is an interactive chess platform developed using React and Socket.io, 
 * **Backend**: Node.js, Express, Socket.io
 * **Utilities**: Concurrently for simultaneous server and client start
 
-## Prerequisites
+### Prerequisites
 Node.js and npm (Node Package Manager) installed. Download Node.js
-Installation
-Clone the repository:
 
-## bash
+## Installation
+Clone the repository:
 ```
 git clone https://github.com/SATVIK2610/chess-multi.git
 cd chess-multi
 ```
-## Install dependencies:
-
-bash
+### Install dependencies:
 ```
 npm install
 ```
-Running the Application
+## Running the Application
 To start the app, use the following commands:
 
 Start both client and server:
