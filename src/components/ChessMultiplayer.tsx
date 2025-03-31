@@ -131,7 +131,32 @@ const ChessMultiplayer: React.FC<{
     socket.on('opponentLeft', () => {
       console.log("Opponent left the room.");
       toast.error("Your opponent has left the game.");
+      
+      // Set opponent left flag to show the appropriate screen
       setOpponentLeft(true);
+      
+      // Reset game state while preserving your connection
+      setGameStarted(false);
+      setActiveTimer(null);
+      
+      // Find your team and username to preserve
+      const currentPlayer = userList.find(user => user.id === socket.id);
+      
+      if (currentPlayer) {
+        if (currentPlayer.team === 'w') {
+          // You're white, black left
+          setPl2('');
+          
+          // Update user list to show only yourself
+          setUserList([currentPlayer]);
+        } else {
+          // You're black, white left
+          setPl1('');
+          
+          // Update user list to show only yourself
+          setUserList([currentPlayer]);
+        }
+      }
     });
 
     socket.on('opponentMove', ({ piece, position }: { piece: Piece; position: Position }) => {
@@ -178,7 +203,7 @@ const ChessMultiplayer: React.FC<{
       socket.off('opponentLeft');
       socket.off('playerNames');
     };
-  }, [playMove, setRoomId, setTimer, timer, updateWhiteTime, updateBlackTime, setGameStarted, activeTimer, setActiveTimer, setPl1, setPl2, gameStarted, timersInitialized]);
+  }, [playMove, setRoomId, setTimer, timer, updateWhiteTime, updateBlackTime, setGameStarted, activeTimer, setActiveTimer, setPl1, setPl2, gameStarted, timersInitialized, userList]);
 
   // Timer countdown effect
   useEffect(() => {
@@ -252,7 +277,7 @@ const ChessMultiplayer: React.FC<{
 
   const leaveRoom = useCallback(() => {
     if (roomId) {
-      socket.emit('leaveRoom');
+      socket.emit('leaveRoom', { roomId });
     }
     resetGameState();
     toast("You left the room.");

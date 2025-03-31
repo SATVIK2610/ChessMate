@@ -137,13 +137,29 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('leaveRoom', ({ roomId }) => {
-    if (!rooms.has(roomId)) return;
-
-    const room = rooms.get(roomId);
+  socket.on('leaveRoom', ({ roomId } = {}) => {
+    // If roomId is provided, check just that room
+    if (roomId && rooms.has(roomId)) {
+      handlePlayerLeaving(socket.id, roomId);
+      return;
+    }
     
-    // Find user in room
-    const userIndex = room.users.findIndex(user => user.id === socket.id);
+    // If no roomId or room not found, check all rooms for this socket
+    for (const [id, room] of rooms.entries()) {
+      const userIndex = room.users.findIndex(user => user.id === socket.id);
+      if (userIndex !== -1) {
+        handlePlayerLeaving(socket.id, id);
+        break; // Found the room, no need to check more
+      }
+    }
+  });
+  
+  // Helper function to handle player leaving logic
+  function handlePlayerLeaving(socketId, roomId) {
+    if (!rooms.has(roomId)) return;
+    
+    const room = rooms.get(roomId);
+    const userIndex = room.users.findIndex(user => user.id === socketId);
     
     if (userIndex !== -1) {
       const leavingUser = room.users[userIndex];
@@ -152,7 +168,10 @@ io.on('connection', (socket) => {
       console.log(`User "${leavingUser.username}" is leaving room: ${roomId}`);
       
       // Remove user from socket room
-      socket.leave(roomId);
+      const socket = io.sockets.sockets.get(socketId);
+      if (socket) {
+        socket.leave(roomId);
+      }
       
       // Remove user from room
       room.users.splice(userIndex, 1);
@@ -183,44 +202,16 @@ io.on('connection', (socket) => {
         console.log(`User removed from room: ${roomId}`);
       }
     }
-  });
+  }
 
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id}`);
 
-    // Find rooms where this user was present
+    // Find rooms where this user was present and handle leaving for each
     for (const [roomId, room] of rooms.entries()) {
       const userIndex = room.users.findIndex(user => user.id === socket.id);
-      
       if (userIndex !== -1) {
-        // Get the team of the disconnected user
-        const disconnectedTeam = room.users[userIndex].team;
-        
-        // Remove user from room
-        room.users.splice(userIndex, 1);
-        
-        if (room.users.length === 0) {
-          // If room is empty, delete it
-          rooms.delete(roomId);
-          console.log(`Room deleted: ${roomId}`);
-        } else {
-          // Get remaining player's info
-          const remainingUser = room.users[0];
-          
-          // Update player names based on who disconnected
-          if (disconnectedTeam === 'w') {
-            // White player left, black remains
-            io.to(roomId).emit('playerNames', { pl1: '', pl2: remainingUser.username });
-          } else {
-            // Black player left, white remains
-            io.to(roomId).emit('playerNames', { pl1: remainingUser.username, pl2: '' });
-          }
-          
-          // Notify remaining users
-          io.to(roomId).emit('userList', room.users);
-          io.to(roomId).emit('opponentLeft');
-          console.log(`User removed from room: ${roomId}`);
-        }
+        handlePlayerLeaving(socket.id, roomId);
       }
     }
   });
