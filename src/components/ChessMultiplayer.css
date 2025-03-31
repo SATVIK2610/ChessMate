@@ -368,13 +368,13 @@
 }
 
 .player-avatar {
-    width: 50px;
-    height: 50px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 20px;
+    font-size: 38px;
     font-weight: bold;
     margin-bottom: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -388,13 +388,19 @@
 .white-avatar {
     background-color: #f0f0f0;
     color: #333;
-    border: 2px solid #779556;
+    border: 3px solid #779556;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .black-avatar {
     background-color: #333;
     color: #f0f0f0;
-    border: 2px solid #779556;
+    border: 3px solid #779556;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .player-name {
@@ -487,4 +493,11 @@
     background-color: rgba(196, 62, 62, 0.1);
     color: #d64646;
     border-color: #d64646;
+}
+
+.chess-symbol {
+    font-size: 42px;
+    line-height: 1;
+    display: inline-block;
+    transform: translateY(-2px);
 }

@@ -392,7 +392,7 @@ const ChessMultiplayer: React.FC<{
           <div className="player-vs-section">
             <div className="player-card">
               <div className="player-avatar white-avatar">
-                ♔
+                <span className="chess-symbol">♔</span>
               </div>
               <div className="player-name">{pl1}</div>
               <div className="player-color">White</div>
@@ -402,7 +402,7 @@ const ChessMultiplayer: React.FC<{
             
             <div className="player-card">
               <div className="player-avatar black-avatar">
-                ♚
+                <span className="chess-symbol">♚</span>
               </div>
               <div className="player-name">{pl2}</div>
               <div className="player-color">Black</div>
@@ -411,14 +411,14 @@ const ChessMultiplayer: React.FC<{
           
           <div className="timer-section">
             <span className="timer-icon">⏱</span>
-            <span className="timer-value">{timer} minutes per side</span>
+            <span className="timer-value">{timer} minutes</span>
           </div>
           
           {team === 'w' ? (
             <button onClick={startGame} className="start-game-btn">Start Game</button>
           ) : (
             <div className="waiting-message">
-              Waiting for White ({pl1}) to start the game...
+              Waiting for {pl1} to start the game...
             </div>
           )}
           

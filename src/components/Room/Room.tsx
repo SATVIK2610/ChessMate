@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, KeyboardEvent, useCallback } from 'react';
 import './Room.css';
 import toast from 'react-hot-toast';
 import { useRoomContext } from './RoomContext'; // Adjust the import according to your file structure
@@ -53,6 +53,18 @@ const Room: React.FC<{ createRoom: (username: string) => void; joinRoom: (roomId
         setPl1(username);
         createRoom(username);
     };
+    
+    // Handle Enter key press - now defined after the functions it uses
+    const handleKeyPress = useCallback((e: KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (activeTab === 'join') {
+                handleJoinRoom();
+            } else {
+                handleCreateRoom();
+            }
+        }
+    }, [activeTab, handleJoinRoom, handleCreateRoom]);
 
     const timerOptions = [
         { value: 1, label: '1 minute' },
@@ -92,6 +104,7 @@ const Room: React.FC<{ createRoom: (username: string) => void; joinRoom: (roomId
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             placeholder="Enter username"
+                            onKeyDown={handleKeyPress}
                         />
                         <input 
                             type="text"
@@ -99,6 +112,7 @@ const Room: React.FC<{ createRoom: (username: string) => void; joinRoom: (roomId
                             value={roomIdInput}
                             onChange={(e) => setRoomIdInput(e.target.value)}
                             placeholder="Enter Room ID"
+                            onKeyDown={handleKeyPress}
                         />
                         <button onClick={handleJoinRoom} className="btn">Join Game</button>
                     </div>
@@ -110,11 +124,13 @@ const Room: React.FC<{ createRoom: (username: string) => void; joinRoom: (roomId
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             placeholder="Enter username"
+                            onKeyDown={handleKeyPress}
                         />
                         <select 
                             className="inp"
                             value={timer}
                             onChange={(e) => setTimer(Number(e.target.value))}
+                            onKeyDown={handleKeyPress}
                         >
                             {timerOptions.map(option => (
                                 <option key={option.value} value={option.value}>

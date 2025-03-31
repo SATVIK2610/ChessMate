@@ -19,6 +19,19 @@ export class Board {
     }
 
     calculateAllMoves() {
+        // Check if both kings are alive
+        const ourKingAlive = this.isKingAlive(TeamType.OUR);
+        const opponentKingAlive = this.isKingAlive(TeamType.OPPONENT);
+        
+        // Set winning team if a king is captured
+        if (!ourKingAlive) {
+            this.winningTeam = TeamType.OPPONENT;
+            return;
+        } else if (!opponentKingAlive) {
+            this.winningTeam = TeamType.OUR;
+            return;
+        }
+        
         // Calculate the moves of all the pieces
         for (const piece of this.pieces) {
             piece.possibleMoves = this.getValidMoves(piece, this.pieces);
@@ -49,10 +62,15 @@ export class Board {
 
     // New function to check if the king of the given team is alive
     isKingAlive(team: TeamType): boolean {
-        return this.pieces.some(piece => piece.isKing && piece.team === team);
+        if (!this.pieces || this.pieces.length === 0) return false;
+        return this.pieces.some(piece => piece && piece.isKing && piece.team === team);
     }
 
     checkCurrentTeamMoves() {
+        // First check if the king is alive
+        const kingExists = this.isKingAlive(this.currentTeam);
+        if (!kingExists) return; // Skip this check if king is dead
+        
         // Loop through all the current team's pieces
         for (const piece of this.pieces.filter(p => p.team === this.currentTeam)) {
             if (piece.possibleMoves === undefined) continue;
@@ -65,11 +83,16 @@ export class Board {
                 simulatedBoard.pieces = simulatedBoard.pieces.filter(p => !p.samePosition(move));
 
                 // Get the piece of the cloned board
-                const clonedPiece = simulatedBoard.pieces.find(p => p.samePiecePosition(piece))!;
+                const clonedPiece = simulatedBoard.pieces.find(p => p.samePiecePosition(piece));
+                if (!clonedPiece) continue; // Skip if piece not found
+                
                 clonedPiece.position = move.clone();
 
                 // Get the king of the cloned board
-                const clonedKing = simulatedBoard.pieces.find(p => p.isKing && p.team === simulatedBoard.currentTeam)!;
+                const clonedKing = simulatedBoard.pieces.find(p => p.isKing && p.team === simulatedBoard.currentTeam);
+                
+                // Skip this move validation if king not found (king is captured)
+                if (!clonedKing) continue;
 
                 // Loop through all enemy pieces, update their possible moves
                 // And check if the current team's king will be in danger
@@ -116,6 +139,14 @@ export class Board {
         destination: Position): boolean {
         const pawnDirection = playedPiece.team === TeamType.OUR ? 1 : -1;
         const destinationPiece = this.pieces.find(p => p.samePosition(destination));
+
+        // Check if the move is capturing a king
+        const isCapturingKing = destinationPiece?.isKing === true;
+        
+        // If capturing a king, set the winning team immediately
+        if (isCapturingKing) {
+            this.winningTeam = playedPiece.team;
+        }
 
         // If the move is a castling move do this
         if (playedPiece.isKing && destinationPiece?.isRook
@@ -186,7 +217,14 @@ export class Board {
                 return results;
             }, [] as Piece[]);
 
-            this.calculateAllMoves();
+            // For king capture, just make sure we don't try to calculate moves
+            if (!isCapturingKing) {
+                this.calculateAllMoves();
+            } else {
+                // For king capture, we need to manually set the winning team
+                // without calculating moves which would cause error
+                this.winningTeam = playedPiece.team;
+            }
         } else {
             return false;
         }

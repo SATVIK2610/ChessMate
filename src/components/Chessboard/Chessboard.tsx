@@ -27,7 +27,7 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
   const chessboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    console.log("Component rendered with team:", team, "socket id:", socket.id);
+    // console.log("Component rendered with team:", team, "socket id:", socket.id);
     
     socket.on("opponentMove", (moveData: { piece: Piece; position: Position }) => {
       const { piece, position } = moveData;
@@ -184,7 +184,6 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
   // Function to generate the avatar URL
   const generateAvatar = (name: string | undefined): string => {
     const initials = getInitials(name);
-    console.log(`Generating avatar for name: "${name}", initials: "${initials}"`);
     
     return `https://api.dicebear.com/6.x/initials/svg?seed=${initials}&radius=15`;
   };
