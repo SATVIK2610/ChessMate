@@ -19,7 +19,10 @@ interface Props {
 }
 
 export default function Chessboard({ playMove, pieces, team, roomId, totalTurns = 0, leaveRoom }: Props) {
-  const { pl1, pl2, whiteTime, blackTime, activeTimer } = useRoomContext(); // Get usernames from context
+  const { 
+    pl1, pl2, whiteTime, blackTime, activeTimer, 
+    gameMode, isThinking, lastMove 
+  } = useRoomContext();
   const [activePiece, setActivePiece] = useState<HTMLElement | null>(null);
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
   const [usernames, setUsernames] = useState<{id: string, username: string}[]>([]);
@@ -27,49 +30,49 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
   const chessboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // console.log("Component rendered with team:", team, "socket id:", socket.id);
-    
-    socket.on("opponentMove", (moveData: { piece: Piece; position: Position }) => {
-      const { piece, position } = moveData;
-      playMove(piece, position);
-    });
-
-    socket.on('userList', (users) => {
-      console.log("Received user list:", users, "Current socket ID:", socket.id);
-      
-      if (!users || !Array.isArray(users)) {
-        console.warn("Invalid userList received:", users);
-        return;
-      }
-      
-      // Store the complete usernames array
-      setUsernames(users);
-      
-      // Log all users in the room
-      users.forEach((user, index) => {
-        console.log(`User ${index}: ID=${user.id}, Name=${user.username}, Team=${user.team}`);
+    if (gameMode === 'multiplayer') {
+      socket.on("opponentMove", (moveData: { piece: Piece; position: Position }) => {
+        const { piece, position } = moveData;
+        playMove(piece, position);
       });
-      
-      // If we have 2 users, show their names
-      if (users.length >= 2) {
-        // Set opponent based on team instead of socket ID
-        if (team === 'w' && users.find(u => u.team === 'b')) {
-          // If I'm white, find black player
-          const blackPlayer = users.find(u => u.team === 'b');
-          setOpponent(blackPlayer?.username || 'Player 2');
-        } else if (team === 'b' && users.find(u => u.team === 'w')) {
-          // If I'm black, find white player
-          const whitePlayer = users.find(u => u.team === 'w');
-          setOpponent(whitePlayer?.username || 'Player 1');
-        }
-      }
-    });
 
-    return () => {
-      socket.off("opponentMove");
-      socket.off('userList');
-    };
-  }, [playMove, team]);
+      socket.on('userList', (users) => {
+        console.log("Received user list:", users, "Current socket ID:", socket.id);
+        
+        if (!users || !Array.isArray(users)) {
+          console.warn("Invalid userList received:", users);
+          return;
+        }
+        
+        // Store the complete usernames array
+        setUsernames(users);
+        
+        // Log all users in the room
+        users.forEach((user, index) => {
+          console.log(`User ${index}: ID=${user.id}, Name=${user.username}, Team=${user.team}`);
+        });
+        
+        // If we have 2 users, show their names
+        if (users.length >= 2) {
+          // Set opponent based on team instead of socket ID
+          if (team === 'w' && users.find(u => u.team === 'b')) {
+            // If I'm white, find black player
+            const blackPlayer = users.find(u => u.team === 'b');
+            setOpponent(blackPlayer?.username || 'Player 2');
+          } else if (team === 'b' && users.find(u => u.team === 'w')) {
+            // If I'm black, find white player
+            const whitePlayer = users.find(u => u.team === 'w');
+            setOpponent(whitePlayer?.username || 'Player 1');
+          }
+        }
+      });
+
+      return () => {
+        socket.off("opponentMove");
+        socket.off('userList');
+      };
+    }
+  }, [playMove, team, gameMode]);
 
   function getPieceAtTile(e: React.MouseEvent): Piece | undefined {
     const chessboard = chessboardRef.current;
@@ -145,7 +148,10 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
       if (currentPiece) {
         const success = playMove(currentPiece.clone(), new Position(x, y));
         if (success) {
-          socket.emit("makeMove", { roomId, piece: currentPiece, position: new Position(x, y) });
+          // Only emit move in multiplayer mode
+          if (gameMode === 'multiplayer') {
+            socket.emit("makeMove", { roomId, piece: currentPiece, position: new Position(x, y) });
+          }
         } else {
           // Reset piece position if move failed
           activePiece.style.position = "relative";
@@ -159,14 +165,14 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
   }
 
   async function copyRoomId() {
-      try {
-          console.log('Room ID before copy:', roomId, 'Type:', typeof roomId);
-          await navigator.clipboard.writeText(roomId);
-          toast.success('Room ID copied!');
-      } catch (err) {
-          toast.error('Could not copy Room ID');
-          console.error(err);
-      }
+    try {
+      console.log('Room ID before copy:', roomId, 'Type:', typeof roomId);
+      await navigator.clipboard.writeText(roomId);
+      toast.success('Room ID copied!');
+    } catch (err) {
+      toast.error('Could not copy Room ID');
+      console.error(err);
+    }
   }
 
   const getInitials = (name: string | undefined): string => {
@@ -217,19 +223,32 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
         isCapturable = true;
       }
 
+      // Highlight last move
+      let isLastMove = false;
+      if (lastMove) {
+        const fileMap: { [key: string]: number } = { 'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7 };
+        const fromFile = fileMap[lastMove.from[0]];
+        const fromRank = parseInt(lastMove.from[1]) - 1;
+        const toFile = fileMap[lastMove.to[0]];
+        const toRank = parseInt(lastMove.to[1]) - 1;
+        
+        if ((i === fromFile && row === fromRank) || (i === toFile && row === toRank)) {
+          isLastMove = true;
+        }
+      }
+
       board.push(
         <Tile 
           key={`${row},${i}`} 
           image={image} 
           number={number} 
           highlight={highlight} 
-          capturable={isCapturable} 
+          capturable={isCapturable}
+          lastMove={isLastMove}
         />
       );
     }
   }
-
-  
 
   return (
     <>
@@ -252,6 +271,9 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
               <div className="user-info">
                 <img src={generateAvatar(pl1)} alt="avatar-logo" />
                 <span>{pl1 || "White"}</span>
+                {gameMode === 'bot' && pl1 === 'Bot' && (
+                  <span className="bot-indicator">🤖</span>
+                )}
               </div>
               <div className="timer-display">
                 {formatTime(whiteTime)}
@@ -263,15 +285,21 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
               <div className="user-info">
                 <img src={generateAvatar(pl2)} alt="avatar-logo" />
                 <span>{pl2 || "Black"}</span>
+                {gameMode === 'bot' && pl2 === 'Bot' && (
+                  <span className="bot-indicator">🤖</span>
+                )}
               </div>
               <div className="timer-display">
                 {formatTime(blackTime)}
               </div>
             </div>
             
-            <button onClick={copyRoomId} className="roomBtn">COPY ROOM ID</button>
+            {gameMode === 'multiplayer' && (
+              <button onClick={copyRoomId} className="roomBtn">COPY ROOM ID</button>
+            )}
+            
             <button onClick={leaveRoom} className="leave-btn sidebar-leave-btn">
-                Leave Room
+              Leave Room
             </button>
           </div>
         </div>
@@ -281,6 +309,7 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
           onMouseUp={(e) => dropPiece(e)}
           id="chessboard"
           ref={chessboardRef}
+          className={isThinking ? 'thinking' : ''}
         >
           {board}
         </div>

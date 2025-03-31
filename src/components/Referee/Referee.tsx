@@ -6,12 +6,15 @@ import { Pawn } from "../../models/Pawn";
 // import { Position } from "../../models/Position";
 import { PieceType, TeamType } from "../../Types";
 import ChessMultiplayer from "../ChessMultiplayer";
+import BotGame from "../Game/BotGame";
+import { useRoomContext } from "../Room/RoomContext";
 
 export default function Referee() {
     const [board, setBoard] = useState<Board>(initialBoard.clone());
     const [promotionPawn, setPromotionPawn] = useState<Piece>();
     const modalRef = useRef<HTMLDivElement>(null);
     const checkmateModalRef = useRef<HTMLDivElement>(null);
+    const { gameMode } = useRoomContext();
 
     function playMove(playedPiece: Piece, destination: Position): boolean {
         // If the playing piece doesn't have any moves return
@@ -159,6 +162,11 @@ export default function Referee() {
                     </div>
                 </div>
             </div>
+
+            {/* Render BotGame component when in bot mode */}
+            {gameMode === 'bot' && (
+                <BotGame board={board} makeMove={playMove} />
+            )}
 
             {/* Pass totalTurns to ChessMultiplayer */}
             <ChessMultiplayer playMove={playMove} pieces={board.pieces} totalTurns={board.totalTurns} />

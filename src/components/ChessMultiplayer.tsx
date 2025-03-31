@@ -20,7 +20,8 @@ const ChessMultiplayer: React.FC<{
     blackTime, setBlackTime, 
     gameStarted, setGameStarted,
     activeTimer, setActiveTimer,
-    setPl1, setPl2
+    setPl1, setPl2,
+    gameMode
   } = useRoomContext();
 
   console.log("pl1", pl1);
@@ -52,158 +53,160 @@ const ChessMultiplayer: React.FC<{
   }, [timer, updateWhiteTime, updateBlackTime, timersInitialized]);
 
   useEffect(() => {
-    socket.on('roomCreated', (id: string) => {
-      setJoined(true);
-      setTeam('w');
-      setRoomId(id);
-      
-      // Initialize timers based on the selected timer value
-      updateWhiteTime(timer * 60);
-      updateBlackTime(timer * 60);
-      setTimersInitialized(true);
-      
-      toast.success(`Room created with ID: ${id}`);
-    });
+    if (gameMode === 'multiplayer') {
+      socket.on('roomCreated', (id: string) => {
+        setJoined(true);
+        setTeam('w');
+        setRoomId(id);
+        
+        // Initialize timers based on the selected timer value
+        updateWhiteTime(timer * 60);
+        updateBlackTime(timer * 60);
+        setTimersInitialized(true);
+        
+        toast.success(`Room created with ID: ${id}`);
+      });
 
-    socket.on('roomJoined', (id: string) => {
-      setJoined(true);
-      setTeam('b');
-      toast.success(`Joined room with ID: ${id}`);
-      
-      // When joining as black, make sure to preserve player names
-      console.log(`Joined room as Black player (Team: ${team})`);
-    });
+      socket.on('roomJoined', (id: string) => {
+        setJoined(true);
+        setTeam('b');
+        toast.success(`Joined room with ID: ${id}`);
+        
+        // When joining as black, make sure to preserve player names
+        console.log(`Joined room as Black player (Team: ${team})`);
+      });
 
-    socket.on('timerInfo', (timerMinutes: number) => {
-      console.log(`Received timer info: ${timerMinutes} minutes`);
-      
-      // Update the timer context value
-      setTimer(timerMinutes);
-      
-      // Initialize timers based on the received timer value
-      updateWhiteTime(timerMinutes * 60);
-      updateBlackTime(timerMinutes * 60);
-      setTimersInitialized(true);
-    });
+      socket.on('timerInfo', (timerMinutes: number) => {
+        console.log(`Received timer info: ${timerMinutes} minutes`);
+        
+        // Update the timer context value
+        setTimer(timerMinutes);
+        
+        // Initialize timers based on the received timer value
+        updateWhiteTime(timerMinutes * 60);
+        updateBlackTime(timerMinutes * 60);
+        setTimersInitialized(true);
+      });
 
-    socket.on('error', (message: string) => {
-      toast.error(message);
-      resetGameState();
-    });
+      socket.on('error', (message: string) => {
+        toast.error(message);
+        resetGameState();
+      });
 
-    socket.on('userList', (users: {id: string, username: string, team: string}[]) => {
-      console.log('Received userList:', users);
-      setUserList(users);
-      
-      // Extract player names from user list based on team
-      const whitePlayer = users.find(user => user.team === 'w')?.username;
-      const blackPlayer = users.find(user => user.team === 'b')?.username;
-      
-      console.log(`Extracted from userList - White: "${whitePlayer}", Black: "${blackPlayer}"`);
-      
-      // Only update if names are found
-      if (whitePlayer) {
-        setPl1(whitePlayer);
-        console.log(`Updated white player name (from userList) to: "${whitePlayer}"`);
-      }
-      
-      if (blackPlayer) {
-        setPl2(blackPlayer);
-        console.log(`Updated black player name (from userList) to: "${blackPlayer}"`);
-      }
-    });
-
-    socket.on('playerNames', ({ pl1: whitePlayer, pl2: blackPlayer }: { pl1: string, pl2: string }) => {
-      console.log(`Received playerNames event - White: "${whitePlayer}", Black: "${blackPlayer}"`);
-      
-      // Only update non-empty names
-      if (whitePlayer) {
-        setPl1(whitePlayer);
-        console.log(`Updated white player name to: "${whitePlayer}"`);
-      }
-      
-      if (blackPlayer) {
-        setPl2(blackPlayer);
-        console.log(`Updated black player name to: "${blackPlayer}"`);
-      }
-    });
-
-    socket.on('opponentLeft', () => {
-      console.log("Opponent left the room.");
-      toast.error("Your opponent has left the game.");
-      
-      // Set opponent left flag to show the appropriate screen
-      setOpponentLeft(true);
-      
-      // Reset game state while preserving your connection
-      setGameStarted(false);
-      setActiveTimer(null);
-      
-      // Find your team and username to preserve
-      const currentPlayer = userList.find(user => user.id === socket.id);
-      
-      if (currentPlayer) {
-        if (currentPlayer.team === 'w') {
-          // You're white, black left
-          setPl2('');
-          
-          // Update user list to show only yourself
-          setUserList([currentPlayer]);
-        } else {
-          // You're black, white left
-          setPl1('');
-          
-          // Update user list to show only yourself
-          setUserList([currentPlayer]);
-        }
-      }
-    });
-
-    socket.on('opponentMove', ({ piece, position }: { piece: Piece; position: Position }) => {
-      const moveSuccess = playMove(piece, position);
-      
-      if (moveSuccess) {
-        // Switch timer when opponent makes a move
-        if (activeTimer === 'white') {
-          setActiveTimer('black');
-        } else if (activeTimer === 'black') {
-          setActiveTimer('white');
+      socket.on('userList', (users: {id: string, username: string, team: string}[]) => {
+        console.log('Received userList:', users);
+        setUserList(users);
+        
+        // Extract player names from user list based on team
+        const whitePlayer = users.find(user => user.team === 'w')?.username;
+        const blackPlayer = users.find(user => user.team === 'b')?.username;
+        
+        console.log(`Extracted from userList - White: "${whitePlayer}", Black: "${blackPlayer}"`);
+        
+        // Only update if names are found
+        if (whitePlayer) {
+          setPl1(whitePlayer);
+          console.log(`Updated white player name (from userList) to: "${whitePlayer}"`);
         }
         
-        setLastMoveTime(Date.now());
-      }
-    });
-    
-    socket.on('gameStarted', (data: { timer: number }) => {
-      if (data && data.timer) {
-        console.log(`Game started with timer: ${data.timer} minutes`);
-      }
+        if (blackPlayer) {
+          setPl2(blackPlayer);
+          console.log(`Updated black player name (from userList) to: "${blackPlayer}"`);
+        }
+      });
+
+      socket.on('playerNames', ({ pl1: whitePlayer, pl2: blackPlayer }: { pl1: string, pl2: string }) => {
+        console.log(`Received playerNames event - White: "${whitePlayer}", Black: "${blackPlayer}"`);
+        
+        // Only update non-empty names
+        if (whitePlayer) {
+          setPl1(whitePlayer);
+          console.log(`Updated white player name to: "${whitePlayer}"`);
+        }
+        
+        if (blackPlayer) {
+          setPl2(blackPlayer);
+          console.log(`Updated black player name to: "${blackPlayer}"`);
+        }
+      });
+
+      socket.on('opponentLeft', () => {
+        console.log("Opponent left the room.");
+        toast.error("Your opponent has left the game.");
+        
+        // Set opponent left flag to show the appropriate screen
+        setOpponentLeft(true);
+        
+        // Reset game state while preserving your connection
+        setGameStarted(false);
+        setActiveTimer(null);
+        
+        // Find your team and username to preserve
+        const currentPlayer = userList.find(user => user.id === socket.id);
+        
+        if (currentPlayer) {
+          if (currentPlayer.team === 'w') {
+            // You're white, black left
+            setPl2('');
+            
+            // Update user list to show only yourself
+            setUserList([currentPlayer]);
+          } else {
+            // You're black, white left
+            setPl1('');
+            
+            // Update user list to show only yourself
+            setUserList([currentPlayer]);
+          }
+        }
+      });
+
+      socket.on('opponentMove', ({ piece, position }: { piece: Piece; position: Position }) => {
+        const moveSuccess = playMove(piece, position);
+        
+        if (moveSuccess) {
+          // Switch timer when opponent makes a move
+          if (activeTimer === 'white') {
+            setActiveTimer('black');
+          } else if (activeTimer === 'black') {
+            setActiveTimer('white');
+          }
+          
+          setLastMoveTime(Date.now());
+        }
+      });
       
-      setGameStarted(true);
-      setActiveTimer('white'); // White starts first
-      setLastMoveTime(Date.now());
-    });
+      socket.on('gameStarted', (data: { timer: number }) => {
+        if (data && data.timer) {
+          console.log(`Game started with timer: ${data.timer} minutes`);
+        }
+        
+        setGameStarted(true);
+        setActiveTimer('white'); // White starts first
+        setLastMoveTime(Date.now());
+      });
 
-    socket.on('timerInfo', ({ white, black, active }) => {
-      if (gameStarted && timersInitialized) {
-        updateWhiteTime(white);
-        updateBlackTime(black);
-        setActiveTimer(active);
-      }
-    });
+      socket.on('timerInfo', ({ white, black, active }) => {
+        if (gameStarted && timersInitialized) {
+          updateWhiteTime(white);
+          updateBlackTime(black);
+          setActiveTimer(active);
+        }
+      });
 
-    return () => {
-      socket.off('roomCreated');
-      socket.off('roomJoined');
-      socket.off('timerInfo');
-      socket.off('error');
-      socket.off('userList');
-      socket.off('opponentMove');
-      socket.off('gameStarted');
-      socket.off('opponentLeft');
-      socket.off('playerNames');
-    };
-  }, [playMove, setRoomId, setTimer, timer, updateWhiteTime, updateBlackTime, setGameStarted, activeTimer, setActiveTimer, setPl1, setPl2, gameStarted, timersInitialized, userList]);
+      return () => {
+        socket.off('roomCreated');
+        socket.off('roomJoined');
+        socket.off('timerInfo');
+        socket.off('error');
+        socket.off('userList');
+        socket.off('opponentMove');
+        socket.off('gameStarted');
+        socket.off('opponentLeft');
+        socket.off('playerNames');
+      };
+    }
+  }, [playMove, setRoomId, setTimer, timer, updateWhiteTime, updateBlackTime, setGameStarted, activeTimer, setActiveTimer, setPl1, setPl2, gameStarted, timersInitialized, userList, team, gameMode]);
 
   // Timer countdown effect
   useEffect(() => {
@@ -275,16 +278,42 @@ const ChessMultiplayer: React.FC<{
     }
   };
 
+  const startBotGame = (username: string, playerColor: 'w' | 'b', difficulty: number) => {
+    // Set up the game state for bot mode
+    setJoined(true);
+    setTeam(playerColor);
+    setGameStarted(true);
+    setActiveTimer('white'); // White starts first
+    
+    // Set player names based on color
+    if (playerColor === 'w') {
+      setPl1(username);
+      setPl2('Bot');
+    } else {
+      setPl1('Bot');
+      setPl2(username);
+    }
+    
+    // Initialize timers
+    updateWhiteTime(timer * 60);
+    updateBlackTime(timer * 60);
+    setTimersInitialized(true);
+    
+    toast.success(`Starting game against bot (Difficulty: ${difficulty})`);
+  };
+
   const leaveRoom = useCallback(() => {
-    if (roomId) {
+    if (gameMode === 'multiplayer' && roomId) {
       socket.emit('leaveRoom', { roomId });
     }
     resetGameState();
     toast("You left the room.");
-  }, [roomId]);
+  }, [roomId, gameMode]);
 
   const startGame = () => {
-    socket.emit('startGame', { roomId });
+    if (gameMode === 'multiplayer') {
+      socket.emit('startGame', { roomId });
+    }
     setGameStarted(true);
     setActiveTimer('white'); // White starts first
     setLastMoveTime(Date.now());
@@ -303,7 +332,10 @@ const ChessMultiplayer: React.FC<{
         setLastMoveTime(Date.now());
       }
       
-      socket.emit('makeMove', { roomId, piece, position });
+      // Only emit move in multiplayer mode
+      if (gameMode === 'multiplayer') {
+        socket.emit('makeMove', { roomId, piece, position });
+      }
     }
 
     return moveSuccess;
@@ -324,27 +356,20 @@ const ChessMultiplayer: React.FC<{
   }, [setRoomId, setPl1, setPl2, setGameStarted, setActiveTimer, setTimersInitialized, setWhiteTime, setBlackTime, timer]);
 
   if (!joined) {
-    return <Room createRoom={createRoom} joinRoom={joinRoom} />;
+    return <Room createRoom={createRoom} joinRoom={joinRoom} startBotGame={startBotGame} />;
   }
 
-  if (userList.length < 2 || opponentLeft) {
+  if (!gameStarted) {
     return (
       <div className="game-container">
-        <div className="waiting-screen">
-          {opponentLeft ? (
-            <>
-              <h2>Opponent Left</h2>
-              <p>Your opponent has disconnected from the game.</p>
-              <button onClick={leaveRoom} className="leave-btn">
-                Back to Lobby
-              </button>
-            </>
-          ) : (
-            <>
-              <h2>Waiting for Opponent...</h2>
-              <p>Share this Room ID with your friend:</p>
-              <div className="room-id-display">
-                <span>{roomId}</span>
+        <div className="ready-to-play">
+          <h2>Ready to Play!</h2>
+          
+          {gameMode === 'multiplayer' && (
+            <div className="room-id-section">
+              <div className="room-id-label">Room ID</div>
+              <div className="room-id-value">
+                {roomId}
                 <button 
                   onClick={() => {
                     navigator.clipboard.writeText(roomId);
@@ -355,39 +380,8 @@ const ChessMultiplayer: React.FC<{
                   Copy
                 </button>
               </div>
-              <p>Players connected: {userList.length}/2</p>
-              <p>Your username: {userList.find(u => u.id === socket.id)?.username}</p>
-              <button onClick={leaveRoom} className="leave-btn">
-                Leave Room
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (!gameStarted) {
-    return (
-      <div className="game-container">
-        <div className="ready-to-play">
-          <h2>Ready to Play!</h2>
-          
-          <div className="room-id-section">
-            <div className="room-id-label">Room ID</div>
-            <div className="room-id-value">
-              {roomId}
-              <button 
-                onClick={() => {
-                  navigator.clipboard.writeText(roomId);
-                  toast.success("Room ID copied to clipboard!");
-                }} 
-                className="copy-room-id-btn"
-              >
-                Copy
-              </button>
             </div>
-          </div>
+          )}
           
           <div className="player-vs-section">
             <div className="player-card">
@@ -414,12 +408,16 @@ const ChessMultiplayer: React.FC<{
             <span className="timer-value">{timer} minutes</span>
           </div>
           
-          {team === 'w' ? (
-            <button onClick={startGame} className="start-game-btn">Start Game</button>
+          {gameMode === 'multiplayer' ? (
+            team === 'w' ? (
+              <button onClick={startGame} className="start-game-btn">Start Game</button>
+            ) : (
+              <div className="waiting-message">
+                Waiting for {pl1} to start the game...
+              </div>
+            )
           ) : (
-            <div className="waiting-message">
-              Waiting for {pl1} to start the game...
-            </div>
+            <button onClick={startGame} className="start-game-btn">Start Game</button>
           )}
           
           <button onClick={leaveRoom} className="leave-btn">

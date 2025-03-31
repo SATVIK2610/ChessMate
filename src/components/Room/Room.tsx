@@ -1,13 +1,29 @@
 import React, { useState, KeyboardEvent, useCallback } from 'react';
 import './Room.css';
 import toast from 'react-hot-toast';
-import { useRoomContext } from './RoomContext'; // Adjust the import according to your file structure
+import { useRoomContext, GameMode } from './RoomContext'; // Import GameMode type
 
-const Room: React.FC<{ createRoom: (username: string) => void; joinRoom: (roomId: string, username: string) => void; }> = ({ createRoom, joinRoom }) => {
-    const { pl1, setPl1, pl2, setPl2, roomId, setRoomId, timer, setTimer } = useRoomContext();
+// Add a new prop for starting a bot game
+const Room: React.FC<{ 
+    createRoom: (username: string) => void; 
+    joinRoom: (roomId: string, username: string) => void;
+    startBotGame: (username: string, playerColor: 'w' | 'b', difficulty: number) => void; 
+}> = ({ createRoom, joinRoom, startBotGame }) => {
+    const { 
+        pl1, setPl1, 
+        pl2, setPl2, 
+        roomId, setRoomId, 
+        timer, setTimer,
+        setGameMode,
+        setBotDifficulty,
+        setPlayerColor
+    } = useRoomContext();
+    
     const [roomIdInput, setRoomIdInput] = useState<string>('');
-    const [activeTab, setActiveTab] = useState<'join' | 'create'>('join');
+    const [activeTab, setActiveTab] = useState<'join' | 'create' | 'bot'>('join');
     const [username, setUsername] = useState<string>('');
+    const [botColor, setBotColor] = useState<'w' | 'b'>('b'); // Default: bot plays as black, player as white
+    const [difficulty, setDifficulty] = useState<number>(1); // Default difficulty level
 
     const handleJoinRoom = () => {
         if (!username.trim()) {
@@ -40,6 +56,7 @@ const Room: React.FC<{ createRoom: (username: string) => void; joinRoom: (roomId
         
         setRoomId(cleanRoomId);
         setPl2(username);
+        setGameMode('multiplayer');
         
         joinRoom(cleanRoomId, username);
     };
@@ -51,20 +68,45 @@ const Room: React.FC<{ createRoom: (username: string) => void; joinRoom: (roomId
         }
 
         setPl1(username);
+        setGameMode('multiplayer');
         createRoom(username);
     };
     
-    // Handle Enter key press - now defined after the functions it uses
+    const handleStartBotGame = () => {
+        if (!username.trim()) {
+            toast.error('Username is required!');
+            return;
+        }
+        
+        console.log(`Starting bot game: User ${username} playing as ${botColor === 'w' ? 'Black' : 'White'}, difficulty ${difficulty}`);
+        
+        // Set the player's color (opposite of bot color)
+        const playerColorChoice = botColor === 'w' ? 'b' : 'w';
+        setPlayerColor(playerColorChoice);
+        
+        // Set bot difficulty in context
+        setBotDifficulty(difficulty);
+        
+        // Set game mode
+        setGameMode('bot');
+        
+        // Start the bot game
+        startBotGame(username, playerColorChoice, difficulty);
+    };
+    
+    // Handle Enter key press
     const handleKeyPress = useCallback((e: KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             if (activeTab === 'join') {
                 handleJoinRoom();
-            } else {
+            } else if (activeTab === 'create') {
                 handleCreateRoom();
+            } else if (activeTab === 'bot') {
+                handleStartBotGame();
             }
         }
-    }, [activeTab, handleJoinRoom, handleCreateRoom]);
+    }, [activeTab, handleJoinRoom, handleCreateRoom, handleStartBotGame]);
 
     const timerOptions = [
         { value: 1, label: '1 minute' },
@@ -73,6 +115,12 @@ const Room: React.FC<{ createRoom: (username: string) => void; joinRoom: (roomId
         { value: 10, label: '10 minutes' },
         { value: 15, label: '15 minutes' },
         { value: 30, label: '30 minutes' }
+    ];
+    
+    const difficultyOptions = [
+        { value: 0, label: 'Beginner' },
+        { value: 1, label: 'Intermediate' },
+        { value: 2, label: 'Advanced' }
     ];
 
     return (
@@ -93,6 +141,12 @@ const Room: React.FC<{ createRoom: (username: string) => void; joinRoom: (roomId
                         onClick={() => setActiveTab('create')}
                     >
                         Create Game
+                    </button>
+                    <button 
+                        className={`tab-btn ${activeTab === 'bot' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('bot')}
+                    >
+                        Play with Bot
                     </button>
                 </div>
                 
@@ -116,7 +170,7 @@ const Room: React.FC<{ createRoom: (username: string) => void; joinRoom: (roomId
                         />
                         <button onClick={handleJoinRoom} className="btn">Join Game</button>
                     </div>
-                ) : (
+                ) : activeTab === 'create' ? (
                     <div className="tab-content">
                         <input 
                             type="text"
@@ -139,6 +193,59 @@ const Room: React.FC<{ createRoom: (username: string) => void; joinRoom: (roomId
                             ))}
                         </select>
                         <button onClick={handleCreateRoom} className="btn">Create Game</button>
+                    </div>
+                ) : (
+                    <div className="tab-content">
+                        <input 
+                            type="text"
+                            className="inp"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="Enter username"
+                            onKeyDown={handleKeyPress}
+                        />
+                        
+                        <div className="select-group">
+                            <label>Play as:</label>
+                            <div className="radio-group">
+                                <label>
+                                    <input 
+                                        type="radio" 
+                                        name="color" 
+                                        checked={botColor === 'b'} 
+                                        onChange={() => setBotColor('b')} 
+                                    />
+                                    White
+                                </label>
+                                <label>
+                                    <input 
+                                        type="radio" 
+                                        name="color" 
+                                        checked={botColor === 'w'} 
+                                        onChange={() => setBotColor('w')} 
+                                    />
+                                    Black
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div className="select-wrapper">
+                            <label>Bot Difficulty:</label>
+                            <select 
+                                className="inp"
+                                value={difficulty}
+                                onChange={(e) => setDifficulty(Number(e.target.value))}
+                                onKeyDown={handleKeyPress}
+                            >
+                                {difficultyOptions.map(option => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        <button onClick={handleStartBotGame} className="btn">Start Game</button>
                     </div>
                 )}
             </div>
