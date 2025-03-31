@@ -14,35 +14,62 @@ interface Props {
   pieces: Piece[];
   team: string;
   roomId: string;
+  totalTurns?: number;
+  leaveRoom: () => void;
 }
 
-export default function Chessboard({ playMove, pieces, team, roomId }: Props) {
-  const { pl1, pl2 } = useRoomContext(); // Get usernames from context
+export default function Chessboard({ playMove, pieces, team, roomId, totalTurns = 0, leaveRoom }: Props) {
+  const { pl1, pl2, whiteTime, blackTime, activeTimer } = useRoomContext(); // Get usernames from context
   const [activePiece, setActivePiece] = useState<HTMLElement | null>(null);
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
-  const [usernames, setUsernames] = useState<string[]>([]);
+  const [usernames, setUsernames] = useState<{id: string, username: string}[]>([]);
+  const [opponent, setOpponent] = useState<string>('');
   const chessboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    console.log("Component rendered with team:", team, "socket id:", socket.id);
+    
     socket.on("opponentMove", (moveData: { piece: Piece; position: Position }) => {
       const { piece, position } = moveData;
       playMove(piece, position);
     });
 
-    socket.on('userJoined', ({ username, users }) => {
-      setUsernames(users.map((user: any) => user.username));
-    });
-
-    socket.on('userLeft', ({ username, users }) => {
-      setUsernames(users.map((user: any) => user.username));
+    socket.on('userList', (users) => {
+      console.log("Received user list:", users, "Current socket ID:", socket.id);
+      
+      if (!users || !Array.isArray(users)) {
+        console.warn("Invalid userList received:", users);
+        return;
+      }
+      
+      // Store the complete usernames array
+      setUsernames(users);
+      
+      // Log all users in the room
+      users.forEach((user, index) => {
+        console.log(`User ${index}: ID=${user.id}, Name=${user.username}, Team=${user.team}`);
+      });
+      
+      // If we have 2 users, show their names
+      if (users.length >= 2) {
+        // Set opponent based on team instead of socket ID
+        if (team === 'w' && users.find(u => u.team === 'b')) {
+          // If I'm white, find black player
+          const blackPlayer = users.find(u => u.team === 'b');
+          setOpponent(blackPlayer?.username || 'Player 2');
+        } else if (team === 'b' && users.find(u => u.team === 'w')) {
+          // If I'm black, find white player
+          const whitePlayer = users.find(u => u.team === 'w');
+          setOpponent(whitePlayer?.username || 'Player 1');
+        }
+      }
     });
 
     return () => {
       socket.off("opponentMove");
-      socket.off('userJoined');
-      socket.off('userLeft');
+      socket.off('userList');
     };
-  }, [playMove]);
+  }, [playMove, team]);
 
   function getPieceAtTile(e: React.MouseEvent): Piece | undefined {
     const chessboard = chessboardRef.current;
@@ -69,11 +96,14 @@ export default function Chessboard({ playMove, pieces, team, roomId }: Props) {
 
       setGrabPosition(new Position(grabX, grabY));
 
+      // Set positioning for the dragged piece
       const x = e.clientX - GRID_SIZE / 2;
       const y = e.clientY - GRID_SIZE / 2;
-      element.style.position = "absolute";
+      element.style.position = "fixed"; // Use fixed instead of absolute
       element.style.left = `${x}px`;
       element.style.top = `${y}px`;
+      element.style.zIndex = "1000";
+      element.style.pointerEvents = "none"; // Prevents flickering when dragging
 
       setActivePiece(element);
     }
@@ -83,13 +113,17 @@ export default function Chessboard({ playMove, pieces, team, roomId }: Props) {
     const chessboard = chessboardRef.current;
     const currentPiece = pieces.find((p) => p.samePosition(grabPosition));
     if (activePiece && chessboard && currentPiece?.team === team) {
-      const minX = chessboard.offsetLeft - 25;
-      const minY = chessboard.offsetTop - 25;
-      const maxX = chessboard.offsetLeft + chessboard.clientWidth - 75;
-      const maxY = chessboard.offsetTop + chessboard.clientHeight - 75;
-      const x = e.clientX - 50;
-      const y = e.clientY - 50;
-      activePiece.style.position = "absolute";
+      // Calculate boundaries for the entire window
+      const minX = 0;
+      const minY = 0;
+      const maxX = window.innerWidth - GRID_SIZE;
+      const maxY = window.innerHeight - GRID_SIZE;
+      
+      const x = e.clientX - GRID_SIZE / 2;
+      const y = e.clientY - GRID_SIZE / 2;
+      
+      // Keep using fixed positioning
+      activePiece.style.position = "fixed";
       activePiece.style.left = `${Math.min(maxX, Math.max(minX, x))}px`;
       activePiece.style.top = `${Math.min(maxY, Math.max(minY, y))}px`;
     }
@@ -98,6 +132,9 @@ export default function Chessboard({ playMove, pieces, team, roomId }: Props) {
   function dropPiece(e: React.MouseEvent) {
     const chessboard = chessboardRef.current;
     if (activePiece && chessboard) {
+      // Reset pointer events
+      activePiece.style.pointerEvents = '';
+      
       const x = Math.floor((e.clientX - chessboard.offsetLeft) / GRID_SIZE);
       const y = isWhiteTeam ? 
         HORIZONTAL_AXIS.length - 1 - Math.floor((e.clientY - chessboard.offsetTop) / GRID_SIZE) :
@@ -108,11 +145,13 @@ export default function Chessboard({ playMove, pieces, team, roomId }: Props) {
       if (currentPiece) {
         const success = playMove(currentPiece.clone(), new Position(x, y));
         if (success) {
-          socket.emit("makeMove", { piece: currentPiece, position: new Position(x, y) });
+          socket.emit("makeMove", { roomId, piece: currentPiece, position: new Position(x, y) });
         } else {
+          // Reset piece position if move failed
           activePiece.style.position = "relative";
           activePiece.style.removeProperty("top");
           activePiece.style.removeProperty("left");
+          activePiece.style.removeProperty("z-index");
         }
       }
       setActivePiece(null);
@@ -121,6 +160,7 @@ export default function Chessboard({ playMove, pieces, team, roomId }: Props) {
 
   async function copyRoomId() {
       try {
+          console.log('Room ID before copy:', roomId, 'Type:', typeof roomId);
           await navigator.clipboard.writeText(roomId);
           toast.success('Room ID copied!');
       } catch (err) {
@@ -129,22 +169,31 @@ export default function Chessboard({ playMove, pieces, team, roomId }: Props) {
       }
   }
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | undefined): string => {
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      return '?';  // Default initial if name is invalid
+    }
+    
     return name
       .split(' ')
-      .map(word => word[0])
-      .join('');
+      .map(word => word[0] || '')
+      .filter(initial => initial)
+      .join('') || '?';
   };
 
   // Function to generate the avatar URL
-  const generateAvatar = (name: string) => {
-    if (name.trim() === '') return;
-
+  const generateAvatar = (name: string | undefined): string => {
     const initials = getInitials(name);
-    console.log(initials);
+    console.log(`Generating avatar for name: "${name}", initials: "${initials}"`);
+    
+    return `https://api.dicebear.com/6.x/initials/svg?seed=${initials}&radius=15`;
+  };
 
-    const url = `https://api.dicebear.com/6.x/initials/svg?seed=${initials}&radius=15`;
-    return url;
+  // Format time as MM:SS
+  const formatTime = (timeInSeconds: number) => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = timeInSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
   // Render the board
@@ -162,12 +211,26 @@ export default function Chessboard({ playMove, pieces, team, roomId }: Props) {
       let currentPiece = activePiece != null ? pieces.find((p) => p.samePosition(grabPosition)) : undefined;
       let highlight = currentPiece?.possibleMoves ?
         currentPiece.possibleMoves.some((p) => p.samePosition(new Position(i, row))) : false;
+      
+      // Check if this is a capturable opponent piece
+      let isCapturable = false;
+      if (highlight && piece && piece.team !== team) {
+        isCapturable = true;
+      }
 
       board.push(
-        <Tile key={`${row},${i}`} image={image} number={number} highlight={highlight} />
+        <Tile 
+          key={`${row},${i}`} 
+          image={image} 
+          number={number} 
+          highlight={highlight} 
+          capturable={isCapturable} 
+        />
       );
     }
   }
+
+  
 
   return (
     <>
@@ -177,16 +240,40 @@ export default function Chessboard({ playMove, pieces, team, roomId }: Props) {
             <img src="https://images.chesscomfiles.com/uploads/v1/images_users/tiny_mce/PedroPinhata/phpkXK09k.png" alt="logo" />
             <h1>ChessMate</h1>
           </div>
-          <div className="cb"></div>
+          
+          <div className="turn-counter">
+            <span>Turn: {totalTurns}</span>
+          </div>
+          
           <div className="lower">
             <h3>Players:</h3>
-            <div className="user">
-              <img src={generateAvatar(pl1)} alt="avatar-logo" />
-              {pl1}
+            
+            {/* White player with timer */}
+            <div className={`user ${activeTimer === 'white' ? 'active-timer' : ''}`}>
+              <div className="user-info">
+                <img src={generateAvatar(pl1)} alt="avatar-logo" />
+                <span>{pl1 || "White"}</span>
+              </div>
+              <div className="timer-display">
+                {formatTime(whiteTime)}
+              </div>
             </div>
-            {pl2}
-            {/* <p>ROOM ID: {roomId}</p> */}
+            
+            {/* Black player with timer */}
+            <div className={`user ${activeTimer === 'black' ? 'active-timer' : ''}`}>
+              <div className="user-info">
+                <img src={generateAvatar(pl2)} alt="avatar-logo" />
+                <span>{pl2 || "Black"}</span>
+              </div>
+              <div className="timer-display">
+                {formatTime(blackTime)}
+              </div>
+            </div>
+            
             <button onClick={copyRoomId} className="roomBtn">COPY ROOM ID</button>
+            <button onClick={leaveRoom} className="leave-btn sidebar-leave-btn">
+                Leave Room
+            </button>
           </div>
         </div>
         <div

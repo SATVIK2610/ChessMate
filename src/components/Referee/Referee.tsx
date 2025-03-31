@@ -25,12 +25,11 @@ export default function Referee() {
 
         let playedMoveIsValid = false;
 
-        // const validMove = playedPiece.possibleMoves?.some(m => m.samePosition(destination));
-        const validMove = playedPiece.possibleMoves?.some((m) => {
-            // Ensure `m` is a Position instance
-            const position = m instanceof Position ? m : new Position(m.x, m.y);
-            return position.samePosition(destination);
-        });
+        // Simply check if coordinates match directly
+        const validMove = playedPiece.possibleMoves.some(m => 
+            m && typeof m === 'object' && 'x' in m && 'y' in m && 
+            m.x === destination.x && m.y === destination.y
+        );
 
         if (!validMove) return false;
 
@@ -139,7 +138,6 @@ export default function Referee() {
 
     return (
         <>
-            <p style={{ color: "white", fontSize: "24px", textAlign: "center" }}>Total turns: {board.totalTurns}</p>
             <div className="modal hidden" ref={modalRef}>
                 <div className="modal-body">
                     <img alt="rook" onClick={() => promotePawn(PieceType.ROOK)} src={`/assets/images/rook_${promotionTeamType()}.png`} />
@@ -162,8 +160,8 @@ export default function Referee() {
                 </div>
             </div>
 
-            {/* Pass `playMove` and `pieces` to `ChessMultiplayer` */}
-            <ChessMultiplayer playMove={playMove} pieces={board.pieces} />
+            {/* Pass totalTurns to ChessMultiplayer */}
+            <ChessMultiplayer playMove={playMove} pieces={board.pieces} totalTurns={board.totalTurns} />
         </>
     );
 }

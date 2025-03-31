@@ -1,10 +1,40 @@
+#app {
+    min-height: 100vh;
+    width: 100vw;
+    position: fixed; /* prevent scroll */
+    overflow: hidden;
+}
+
+.main {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    background-color: #121212;
+    background-image: linear-gradient(rgba(51, 51, 51, 0.3) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(51, 51, 51, 0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: hidden; /* Prevent scrollbars */
+}
+
 #chessboard {
     display: grid;
     grid-template-columns: repeat(8, 100px);
     grid-template-rows: repeat(8, 100px);
     width: 800px;
     height: 800px;
-    background-color: blue;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+    /* margin-bottom: 40px; */
+    user-select: none; /* Prevent selection */
 }
 
 .modal {
@@ -13,6 +43,9 @@
     right: 0px;
     bottom: 0px;
     left: 0px;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    z-index: 100;
 }
 
 .modal.hidden {
@@ -28,28 +61,35 @@
     justify-content: space-around;
     height: 300px;
     width: 800px;
-    background-color: rgba(127, 127, 127, 0.8);
+    background-color: #242424;
+    border-radius: 12px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
 }
 
 .modal>.modal-body>img {
     height: 120px;
     padding: 20px;
-    border-radius: 50%;
+    border-radius: 12px;
+    transition: all 0.2s ease;
 }
 
 .modal>.modal-body>img:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.15);
     cursor: pointer;
+    transform: scale(1.1);
 }
 
 .modal>.modal-body>.checkmate-body {
     display: flex;
     flex-direction: column;
     gap: 48px;
+    align-items: center;
 }
 
 .modal>.modal-body>.checkmate-body>span {
     font-size: 32px;
+    color: white;
+    font-weight: bold;
 }
 
 .modal>.modal-body>.checkmate-body>button {
@@ -59,74 +99,168 @@
     padding: 24px 48px;
     font-size: 32px;
     color: white;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .modal>.modal-body>.checkmate-body>button:hover {
     cursor: pointer;
-}
-
-.main {
-    display: flex;
-    border: 2px solid white;
-    /* border-top: 2px solid white; */
-    width: 100vw;
-    /* margin-left: 20px; */
+    background-color: #8aab63;
+    transform: translateY(-3px);
 }
 
 .sidebar {
     display: flex;
     flex-direction: column;
-    /* margin-right: 250px; */
+    width: 300px;
+    height: 765px;
+    background-color: #242424;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    color: white;
+    padding: 20px;
+    margin-bottom: 0px;
 }
 
 .upper {
     display: flex;
-    margin-left: 15px;
+    align-items: center;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #444;
 }
 
 .upper img {
-    width: 37.5px;
-    height: 52.5px;
-    margin-right: 10px;
-    margin-top: 10px;
-    /* margin-left: 5px; */
+    width: 50px;
+    height: 70px;
+    margin-right: 15px;
 }
 
-.cb{
-    width: 450px;
-    border: 1px solid white;
+.upper h1 {
+    font-size: 28px;
+    margin: 0;
+    font-weight: bold;
+    background: linear-gradient(to right, #779556, #9db787);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
 }
 
-.roomBtn{
+.turn-counter {
+    background-color: #333;
+    padding: 10px 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+    border-left: 3px solid #779556;
+}
+
+.turn-counter span {
+    font-size: 18px;
+    font-weight: 500;
+    color: #fff;
+}
+
+.lower {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex-grow: 1;
+    position: relative;
+}
+
+.lower h3 {
+    font-size: 22px;
+    margin: 0 0 10px 0;
+    color: #ddd;
+}
+
+.user {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
     padding: 10px;
-    border-radius: 10px;
-    cursor: pointer;
-    width: 26%;
-    position: absolute;
-    bottom: 20px;
-    font-size: medium;
+    border-radius: 8px;
+    background-color: #333;
+    transition: all 0.2s ease;
 }
 
-.roomBtn:hover{
-    background-color: #dfdfdf;
+.user.active-timer {
+    border: 2px solid #779556;
+    background-color: #3a3a3a;
+    box-shadow: 0 0 10px rgba(119, 149, 86, 0.3);
 }
 
-.lower{
+.user-info {
     display: flex;
-    flex-direction: column;
-    margin-left: 15px;
-}
-
-.user{
-    display: flex;
-    flex-direction: column;
-    /* border: 1px solid white; */
-    width: fit-content;
     align-items: center;
 }
 
-.user img{
-    width: 60px;
-    height: 60px;
-    margin-bottom: 5px;
+.user img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin-right: 15px;
+    border: 2px solid #779556;
+}
+
+.timer-display {
+    font-family: monospace;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 6px 10px;
+    background-color: #242424;
+    border-radius: 6px;
+    min-width: 70px;
+    text-align: center;
+}
+
+.active-timer .timer-display {
+    background-color: #779556;
+    color: white;
+}
+
+.roomBtn {
+    padding: 14px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    border: none;
+    background-color: #779556;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    letter-spacing: 1px;
+    transition: all 0.2s ease;
+    position: absolute;
+    bottom: 60px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.roomBtn:hover {
+    background-color: #8aab63;
+    transform: translateY(-3px);
+}
+
+/* Add a specific style for dragged pieces */
+.dragging-piece {
+    z-index: 1000 !important;
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+/* Add styles for handling dragged pieces */
+body.dragging {
+    overflow: hidden;
+}
+
+/* Ensure dragged piece remains visible */
+.chess-piece-dragging {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1000 !important;
+    pointer-events: none;
+    transform: scale(1.1);
 }

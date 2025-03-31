@@ -6,7 +6,7 @@ export class Piece {
     position: Position;
     type: PieceType;
     team: TeamType;
-    possibleMoves?: Position[];
+    possibleMoves: Position[];
     hasMoved: boolean;
     constructor(position: Position, type: PieceType,
         team: TeamType, hasMoved: boolean,
@@ -52,8 +52,22 @@ export class Piece {
     }
 
     clone(): Piece {
-        return new Piece(this.position.clone(),
-             this.type, this.team, this.hasMoved,
-             this.possibleMoves?.map(m => m.clone()));
+        // Create a safe clone of possibleMoves with basic object checking
+        const clonedMoves = this.possibleMoves ? 
+            this.possibleMoves.map(m => {
+                // Only try to clone if it's an object with x and y properties
+                if (m && typeof m === 'object' && 'x' in m && 'y' in m) {
+                    return new Position(m.x, m.y);
+                }
+                return m;
+            }) : [];
+            
+        return new Piece(
+            this.position.clone(),
+            this.type, 
+            this.team, 
+            this.hasMoved,
+            clonedMoves
+        );
     }
 }
