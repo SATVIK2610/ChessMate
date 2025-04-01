@@ -36,14 +36,14 @@ const ChessMultiplayer: React.FC<{
   const [joined, setJoined] = useState<boolean>(false);
   const [team, setTeam] = useState<string>('w');
   const [userList, setUserList] = useState<{id: string, username: string, team: string}[]>([]);
-  const [lastMoveTime, setLastMoveTime] = useState<number>(Date.now());
+  const [, setLastMoveTime] = useState<number>(Date.now());
   const [timersInitialized, setTimersInitialized] = useState<boolean>(false);
   const [opponentLeft, setOpponentLeft] = useState<boolean>(false);
   
   // Bot mode state
   const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>(BotDifficulty.EASY);
   const [playerColor, setPlayerColor] = useState<'w' | 'b'>('w');
-  const [botGameOver, setBotGameOver] = useState<string>('');
+  const [, setBotGameOver] = useState<string>('');
   const [botUsername, setBotUsername] = useState<string>('');
 
   // Call the hook at the top level with initial values
@@ -329,14 +329,15 @@ const ChessMultiplayer: React.FC<{
   };
 
   // Function to start a bot game
-  const startBotGame = (username: string, color: 'w' | 'b', difficulty: BotDifficulty) => {
+  const startBotGame = (username: string, difficulty: BotDifficulty) => {
     setGameMode('bot');
     setJoined(true);
-    setPlayerColor(color);
+    // Always set player as black
+    setPlayerColor('b');
     setBotDifficulty(difficulty);
     setBotUsername(username);
 
-    toast.success(`Started a new ${getDifficultyText(difficulty)} bot game as ${color === 'w' ? 'White' : 'Black'}`);
+    toast.success(`Started a new ${getDifficultyText(difficulty)} bot game as Black`);
   };
 
   // Helper function to get difficulty text

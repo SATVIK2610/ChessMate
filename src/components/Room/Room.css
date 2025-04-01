@@ -32,12 +32,7 @@ img {
     margin-bottom: 20px;
 }
 
-.content {
-    color: white;
-    width: 100%;
-}
-
-.content h1 {
+h1 {
     font-size: 32px;
     margin-bottom: 25px;
     text-align: center;
@@ -47,33 +42,67 @@ img {
     color: transparent;
 }
 
+/* New tabs styling */
+.tabs-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
 .tabs {
     display: flex;
     justify-content: center;
     width: 100%;
-    margin-bottom: 25px;
+    background-color: #333;
+    border-radius: 12px;
+    padding: 4px;
+    position: relative;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .tab-btn {
-    padding: 10px 15px;
+    position: relative;
+    z-index: 2;
+    padding: 12px 10px;
     border: none;
-    border-radius: 4px;
-    background-color: #444;
-    color: white;
+    background-color: transparent;
+    color: #aaa;
     cursor: pointer;
-    margin: 0 5px;
-    transition: all 0.2s ease-in-out;
+    border-radius: 8px;
     flex: 1;
-    max-width: 120px;
     font-size: 14px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.tab-icon {
+    font-size: 20px;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.tab-text {
+    display: block;
+    white-space: nowrap;
 }
 
 .tab-btn.active {
-    background-color: #3282b8;
+    color: #fff;
 }
 
-.tab-btn:hover:not(.active) {
-    background-color: #555;
+.tab-indicator {
+    position: absolute;
+    height: calc(100% - 8px);
+    width: 33.33%;
+    background-color: #779556;
+    border-radius: 8px;
+    top: 4px;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
 }
 
 .tab-content {
@@ -81,6 +110,12 @@ img {
     display: flex;
     flex-direction: column;
     align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .timer-select {
@@ -144,75 +179,34 @@ select.inp {
     transform: translateY(-2px);
 }
 
-.line {
+/* Bot info section */
+.bot-info {
+    background-color: #353535;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 10px 0;
+    width: 100%;
     text-align: center;
-    margin-top: 15px;
-    color: #aaa;
+    box-sizing: border-box;
 }
 
-a {
-    cursor: pointer;
-    color: #9db787;
-    font-weight: 500;
-}
-
-a:hover {
-    text-decoration: underline;
-    color: #acd389;
-}
-
-/* Add styling for the bot game mode */
-.color-selection {
-    margin: 15px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.color-selection label {
-    font-size: 14px;
-    color: #fff;
-    margin-bottom: 5px;
-}
-
-.color-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-}
-
-.color-btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    background-color: #444;
-    color: #fff;
-    transition: all 0.2s ease;
-}
-
-.color-btn.active {
-    background-color: #3282b8;
-}
-
-.color-btn:hover:not(.active) {
-    background-color: #555;
+.bot-info p {
+    margin: 0;
+    font-size: 15px;
+    color: #ddd;
 }
 
 @media (max-width: 480px) {
-    .tabs {
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
+    .main-div {
+        width: 90%;
+        padding: 30px 20px;
     }
-
-    .tab-btn {
-        width: 100%;
-        max-width: 100%;
+    
+    .tab-text {
+        font-size: 12px;
     }
-
-    .color-buttons {
-        width: 100%;
+    
+    .tab-icon {
+        font-size: 18px;
     }
 }

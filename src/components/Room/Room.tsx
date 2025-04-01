@@ -7,13 +7,12 @@ import { BotDifficulty } from '../../lib/bot/engine';
 const Room: React.FC<{ 
     createRoom: (username: string) => void; 
     joinRoom: (roomId: string, username: string) => void;
-    startBotGame?: (username: string, playerColor: 'w' | 'b', difficulty: BotDifficulty) => void;
+    startBotGame?: (username: string, difficulty: BotDifficulty) => void;
 }> = ({ createRoom, joinRoom, startBotGame }) => {
     const { pl1, setPl1, pl2, setPl2, roomId, setRoomId, timer, setTimer } = useRoomContext();
     const [roomIdInput, setRoomIdInput] = useState<string>('');
     const [activeTab, setActiveTab] = useState<'join' | 'create' | 'bot'>('join');
     const [username, setUsername] = useState<string>('');
-    const [playerColor, setPlayerColor] = useState<'w' | 'b'>('w');
     const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>(BotDifficulty.EASY);
 
     const handleJoinRoom = () => {
@@ -68,14 +67,10 @@ const Room: React.FC<{
         }
 
         if (startBotGame) {
-            if (playerColor === 'w') {
-                setPl1(username);
-                setPl2('Bot');
-            } else {
-                setPl1('Bot');
-                setPl2(username);
-            }
-            startBotGame(username, playerColor, botDifficulty);
+            // Always set Bot as player 1 (white) and user as player 2 (black)
+            setPl1('Bot');
+            setPl2(username);
+            startBotGame(username, botDifficulty);
         }
     };
     
@@ -114,25 +109,31 @@ const Room: React.FC<{
                 <img src="https://images.chesscomfiles.com/uploads/v1/images_users/tiny_mce/PedroPinhata/phpkXK09k.png" alt="logo" />
                 <h1>ChessMate</h1>
                 
-                <div className="tabs">
-                    <button 
-                        className={`tab-btn ${activeTab === 'join' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('join')}
-                    >
-                        Join Game
-                    </button>
-                    <button 
-                        className={`tab-btn ${activeTab === 'create' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('create')}
-                    >
-                        Create Game
-                    </button>
-                    <button 
-                        className={`tab-btn ${activeTab === 'bot' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('bot')}
-                    >
-                        Play with Bot
-                    </button>
+                <div className="tabs-container">
+                    <div className="tabs">
+                        <button 
+                            className={`tab-btn ${activeTab === 'join' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('join')}
+                        >
+                            <span className="tab-text">Join Game</span>
+                        </button>
+                        <button 
+                            className={`tab-btn ${activeTab === 'create' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('create')}
+                        >
+                            <span className="tab-text">Create Game</span>
+                        </button>
+                        <button 
+                            className={`tab-btn ${activeTab === 'bot' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('bot')}
+                        >
+                            <span className="tab-text">Play with Bot</span>
+                        </button>
+                    </div>
+                    
+                    <div className="tab-indicator" style={{ 
+                        left: activeTab === 'join' ? '0%' : activeTab === 'create' ? '33.33%' : '66.66%' 
+                    }}></div>
                 </div>
                 
                 {activeTab === 'join' ? (
@@ -189,23 +190,6 @@ const Room: React.FC<{
                             placeholder="Enter username"
                             onKeyDown={handleKeyPress}
                         />
-                        <div className="color-selection">
-                            <label>Play as:</label>
-                            <div className="color-buttons">
-                                <button 
-                                    className={`color-btn ${playerColor === 'w' ? 'active' : ''}`}
-                                    onClick={() => setPlayerColor('w')}
-                                >
-                                    White
-                                </button>
-                                <button 
-                                    className={`color-btn ${playerColor === 'b' ? 'active' : ''}`}
-                                    onClick={() => setPlayerColor('b')}
-                                >
-                                    Black
-                                </button>
-                            </div>
-                        </div>
                         <select 
                             className="inp"
                             value={botDifficulty}

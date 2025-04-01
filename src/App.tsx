@@ -1,6 +1,6 @@
 import './App.css';
 import Referee from './components/Referee/Referee';
-import toast, { Toaster } from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 import { RoomProvider } from './components/Room/RoomContext';
 
 function App() {

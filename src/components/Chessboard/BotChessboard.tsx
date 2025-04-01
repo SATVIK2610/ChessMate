@@ -4,7 +4,6 @@ import Tile from "../Tile/Tile";
 import { VERTICAL_AXIS, HORIZONTAL_AXIS, GRID_SIZE } from "../../Constants";
 import { Piece, Position } from "../../models";
 import { PieceType } from "../../Types";
-import { toast } from "react-hot-toast";
 import { BotDifficulty } from "../../lib/bot/engine";
 
 interface Props {
@@ -146,13 +145,6 @@ export default function BotChessboard({
     }
   };
 
-  // Format time as MM:SS
-  const formatTime = (timeInSeconds: number) => {
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = timeInSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
   // Generate avatar URL
   const generateAvatar = (name: string | undefined): string => {
     if (!name || typeof name !== 'string' || name.trim() === '') {
@@ -223,7 +215,7 @@ export default function BotChessboard({
             </div>
             
             <div className="bot-difficulty">
-              <span>Bot: {getDifficultyText(botDifficulty)}</span>
+              <span>Difficulty: {getDifficultyText(botDifficulty)}</span>
             </div>
           </div>
           

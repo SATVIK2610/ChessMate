@@ -22,8 +22,8 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
   const { pl1, pl2, whiteTime, blackTime, activeTimer } = useRoomContext(); // Get usernames from context
   const [activePiece, setActivePiece] = useState<HTMLElement | null>(null);
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
-  const [usernames, setUsernames] = useState<{id: string, username: string}[]>([]);
-  const [opponent, setOpponent] = useState<string>('');
+  const [, setUsernames] = useState<{id: string, username: string}[]>([]);
+  const [, setOpponent] = useState<string>('');
   const chessboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -198,7 +198,6 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
   // Render the board
   let board = [];
   const isWhiteTeam = team === 'w';
-  const isBlackTeam = team === 'b';
 
   for (let j = 0; j < VERTICAL_AXIS.length; j++) {
     const row = isWhiteTeam ? VERTICAL_AXIS.length - 1 - j : j;
