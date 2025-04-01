@@ -49,34 +49,31 @@ img {
 
 .tabs {
     display: flex;
+    justify-content: center;
     width: 100%;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #444;
+    margin-bottom: 25px;
 }
 
 .tab-btn {
-    flex: 1;
-    background-color: #333;
-    color: #aaa;
+    padding: 10px 15px;
     border: none;
-    padding: 12px 0;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.tab-btn:hover {
-    background-color: #3a3a3a;
+    border-radius: 4px;
+    background-color: #444;
     color: white;
+    cursor: pointer;
+    margin: 0 5px;
+    transition: all 0.2s ease-in-out;
+    flex: 1;
+    max-width: 120px;
+    font-size: 14px;
 }
 
 .tab-btn.active {
-    background-color: #779556;
-    color: white;
-    font-weight: bold;
+    background-color: #3282b8;
+}
+
+.tab-btn:hover:not(.active) {
+    background-color: #555;
 }
 
 .tab-content {
@@ -162,4 +159,60 @@ a {
 a:hover {
     text-decoration: underline;
     color: #acd389;
+}
+
+/* Add styling for the bot game mode */
+.color-selection {
+    margin: 15px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.color-selection label {
+    font-size: 14px;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.color-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.color-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    background-color: #444;
+    color: #fff;
+    transition: all 0.2s ease;
+}
+
+.color-btn.active {
+    background-color: #3282b8;
+}
+
+.color-btn:hover:not(.active) {
+    background-color: #555;
+}
+
+@media (max-width: 480px) {
+    .tabs {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tab-btn {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .color-buttons {
+        width: 100%;
+    }
 }

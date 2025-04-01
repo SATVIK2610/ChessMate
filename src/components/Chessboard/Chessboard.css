@@ -264,3 +264,28 @@ body.dragging {
     pointer-events: none;
     transform: scale(1.1);
 }
+
+/* Bot game UI elements */
+.game-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+    background-color: #27272a;
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.bot-difficulty {
+    font-size: 14px;
+    color: #e4e4e7;
+    padding: 5px 0;
+}
+
+.game-status {
+    font-weight: bold;
+    color: #fbbf24;
+    padding: 5px 0;
+    border-top: 1px solid #3f3f46;
+    margin-top: 5px;
+}

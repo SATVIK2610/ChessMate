@@ -40,6 +40,31 @@
     width: 85px;
 }
 
+/* King in check highlight style */
+.king-in-check::before {
+    position: absolute;
+    content: " ";
+    width: 90px;
+    height: 90px;
+    border: 5px solid rgba(255, 0, 0, 0.9); /* Bold red border */
+    border-radius: 5px;
+    background-color: rgba(255, 0, 0, 0.25); /* Red background with low opacity */
+    animation: check-pulse 1s infinite;
+    z-index: 2;
+}
+
+@keyframes check-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+    }
+}
+
 .tile-highlight:not(.chess-piece-tile)::before {
     content: " ";
     width: 24px;
