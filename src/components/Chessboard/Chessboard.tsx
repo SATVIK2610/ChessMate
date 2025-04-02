@@ -24,14 +24,27 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
   const [, setUsernames] = useState<{id: string, username: string}[]>([]);
   const [, setOpponent] = useState<string>('');
+  const [lastMoveSource, setLastMoveSource] = useState<Position | null>(null);
+  const [lastMoveDestination, setLastMoveDestination] = useState<Position | null>(null);
   const chessboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // console.log("Component rendered with team:", team, "socket id:", socket.id);
     
-    socket.on("opponentMove", (moveData: { piece: Piece; position: Position }) => {
-      const { piece, position } = moveData;
-      playMove(piece, position);
+    socket.on("opponentMove", (moveData: { 
+      piece: Piece; 
+      position: Position;
+      highlightSource: Position;
+      highlightDestination: Position;
+    }) => {
+      const { piece, position, highlightSource, highlightDestination } = moveData;
+      const moveSuccess = playMove(piece, position);
+      
+      if (moveSuccess) {
+        // Update last move highlights when opponent makes a move
+        setLastMoveSource(highlightSource);
+        setLastMoveDestination(highlightDestination);
+      }
     });
 
     socket.on('userList', (users) => {
@@ -145,6 +158,10 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
       if (currentPiece) {
         const success = playMove(currentPiece.clone(), new Position(x, y));
         if (success) {
+          // Update last move highlights when the local player makes a move
+          setLastMoveSource(grabPosition);
+          setLastMoveDestination(new Position(x, y));
+          
           socket.emit("makeMove", { roomId, piece: currentPiece, position: new Position(x, y) });
         } else {
           // Reset piece position if move failed
@@ -215,6 +232,10 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
       if (highlight && piece && piece.team !== team) {
         isCapturable = true;
       }
+      
+      // Check if this tile is part of the last move
+      const isLastMoveSource = lastMoveSource?.samePosition(new Position(i, row)) || false;
+      const isLastMoveDestination = lastMoveDestination?.samePosition(new Position(i, row)) || false;
 
       board.push(
         <Tile 
@@ -223,6 +244,8 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
           number={number} 
           highlight={highlight} 
           capturable={isCapturable} 
+          lastMoveSource={isLastMoveSource}
+          lastMoveDestination={isLastMoveDestination}
         />
       );
     }

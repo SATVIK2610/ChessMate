@@ -3,6 +3,7 @@ import './Room.css';
 import toast from 'react-hot-toast';
 import { useRoomContext } from './RoomContext'; // Adjust the import according to your file structure
 import { BotDifficulty } from '../../lib/bot/engine';
+import { chessAudio, ChessSoundType } from '../../lib/audio/ChessAudio';
 
 const Room: React.FC<{ 
     createRoom: (username: string) => void; 
@@ -14,6 +15,13 @@ const Room: React.FC<{
     const [activeTab, setActiveTab] = useState<'join' | 'create' | 'bot'>('join');
     const [username, setUsername] = useState<string>('');
     const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>(BotDifficulty.EASY);
+    const [soundMuted, setSoundMuted] = useState<boolean>(false);
+
+    // Toggle sound
+    const toggleSound = () => {
+        const newMutedState = chessAudio.toggleMute();
+        setSoundMuted(newMutedState);
+    };
 
     const handleJoinRoom = () => {
         if (!username.trim()) {
@@ -108,6 +116,16 @@ const Room: React.FC<{
             <div className="main-div flex">
                 <img src="https://images.chesscomfiles.com/uploads/v1/images_users/tiny_mce/PedroPinhata/phpkXK09k.png" alt="logo" />
                 <h1>ChessMate</h1>
+                
+                <div className="sound-toggle">
+                    <button onClick={toggleSound} className="sound-btn" aria-label={soundMuted ? "Unmute sound" : "Mute sound"}>
+                        <img 
+                            src={`/assets/images/${soundMuted ? 'no-sound.png' : 'sound.png'}`} 
+                            alt={soundMuted ? "Sound off" : "Sound on"}
+                            className="sound-icon"
+                        />
+                    </button>
+                </div>
                 
                 <div className="tabs-container">
                     <div className="tabs">

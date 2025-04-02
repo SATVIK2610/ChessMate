@@ -129,3 +129,35 @@
     pointer-events: none;
     z-index: 1000 !important;
 }
+
+/* Style for the source tile of the last move */
+.last-move-source {
+    background-color: rgba(255, 238, 91, 0.4); /* Lighter yellow for source square */
+}
+
+/* Style for the destination tile of the last move */
+.last-move-destination {
+    background-color: rgba(255, 238, 91, 0.6); /* Darker yellow for destination square */
+}
+
+/* Apply the last move colors while preserving the original tile colors */
+.black-tile.last-move-source, .black-tile.last-move-destination {
+    background-color: rgb(94, 137, 49); /* Darker highlighted green */
+}
+
+.white-tile.last-move-source, .white-tile.last-move-destination {
+    background-color: rgba(238, 238, 210); /* Darker highlighted beige */
+}
+
+/* Add borders to indicate last move squares */
+.last-move-source::after, .last-move-destination::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 238, 91, 0.5); /* Lighter yellow for source square */
+    pointer-events: none;
+    z-index: 3;
+}

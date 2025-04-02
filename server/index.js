@@ -124,16 +124,22 @@ io.on('connection', (socket) => {
     console.log(`Game started in room: ${roomId} with timer ${room.timer} minutes`);
   });
 
-  socket.on('makeMove', ({ roomId, piece, position }) => {
+  socket.on('makeMove', ({ roomId, piece, position, moveType, highlightSource, highlightDestination }) => {
     if (!rooms.has(roomId)) return;
 
     // Find the other player in the room
     const room = rooms.get(roomId);
     const otherPlayers = room.users.filter(user => user.id !== socket.id);
 
-    // Send the move to all other players
+    // Send the move and highlight positions to all other players
     otherPlayers.forEach(player => {
-      io.to(player.id).emit('opponentMove', { piece, position });
+      io.to(player.id).emit('opponentMove', { 
+        piece, 
+        position,
+        moveType,  // Pass the move type to trigger appropriate sound
+        highlightSource,
+        highlightDestination
+      });
     });
   });
 

@@ -4,6 +4,7 @@ import { Piece, Position } from '../../models';
 import { PieceType, TeamType } from '../../Types';
 import { calculateBotMove, BotDifficulty } from './engine';
 import { toast } from 'react-hot-toast';
+import { chessAudio, ChessSoundType } from '../audio/ChessAudio';
 
 // This custom hook handles chess game logic against bot
 // It's separate from multi-player to avoid conflicts
@@ -29,6 +30,9 @@ export const useBotGame = ({
   const [lastMove, setLastMove] = useState<string | null>(null);
   const [isPlayerTurn, setIsPlayerTurn] = useState<boolean>(playerColor === 'w');
   const [gameStatus, setGameStatus] = useState<string>('');
+  // Add state for tracking the bot's move source and destination
+  const [lastMoveSource, setLastMoveSource] = useState<Position | null>(null);
+  const [lastMoveDestination, setLastMoveDestination] = useState<Position | null>(null);
   
   const botThinking = useRef<boolean>(false);
 
@@ -39,6 +43,12 @@ export const useBotGame = ({
     setIsPlayerTurn(playerColor === 'w');
     setGameStatus('');
     setLastMove(null);
+    // Reset move highlights on new game
+    setLastMoveSource(null);
+    setLastMoveDestination(null);
+    
+    // Play game start sound
+    chessAudio.playSound(ChessSoundType.GAME_START);
     
     // If bot plays first (player is black)
     if (playerColor === 'b') {
@@ -93,6 +103,12 @@ export const useBotGame = ({
             y: playerColor === 'w' ? 7 - (parseInt(moveResult.to.charAt(1)) - 1) : parseInt(moveResult.to.charAt(1)) - 1
           };
           
+          // Store the source and destination positions for highlighting
+          const sourcePosition = new Position(fromPos.x, fromPos.y);
+          const destinationPosition = new Position(toPos.x, toPos.y);
+          setLastMoveSource(sourcePosition);
+          setLastMoveDestination(destinationPosition);
+          
           const movingPiece = pieces.find(p => 
             p.position.x === fromPos.x && 
             p.position.y === fromPos.y
@@ -101,6 +117,24 @@ export const useBotGame = ({
           if (movingPiece) {
             // Make the move in the board model
             playMove(movingPiece, new Position(toPos.x, toPos.y));
+            
+            // Play appropriate sound based on move type
+            if (moveResult.captured) {
+              chessAudio.playSound(ChessSoundType.CAPTURE);
+            } else if (moveResult.flags.includes('k') || moveResult.flags.includes('q')) {
+              // 'k' = kingside castle, 'q' = queenside castle
+              chessAudio.playSound(ChessSoundType.CASTLE);
+            } else if (moveResult.flags.includes('p')) {
+              // 'p' = promotion
+              chessAudio.playSound(ChessSoundType.PROMOTE);
+            } else {
+              chessAudio.playSound(ChessSoundType.MOVE);
+            }
+            
+            // If this move results in check, play the check sound
+            if (gameCopy.isCheck()) {
+              setTimeout(() => chessAudio.playSound(ChessSoundType.MOVE_CHECK), 300);
+            }
           }
           
           // Switch to player's turn
@@ -150,10 +184,32 @@ export const useBotGame = ({
         setLastMove(moveDetails.san);
         setGame(new Chess(game.fen())); // Update with new position
         
+        // Store the player's move for highlighting
+        setLastMoveSource(piece.position);
+        setLastMoveDestination(position);
+        
         // Make the move in the board model
         const moveSuccess = playMove(piece, position);
         
         if (moveSuccess) {
+          // Play appropriate sound based on the move type
+          if (moveDetails.captured) {
+            chessAudio.playSound(ChessSoundType.CAPTURE);
+          } else if (moveDetails.flags.includes('k') || moveDetails.flags.includes('q')) {
+            // 'k' = kingside castle, 'q' = queenside castle
+            chessAudio.playSound(ChessSoundType.CASTLE);
+          } else if (moveDetails.flags.includes('p')) {
+            // 'p' = promotion
+            chessAudio.playSound(ChessSoundType.PROMOTE);
+          } else {
+            chessAudio.playSound(ChessSoundType.MOVE);
+          }
+          
+          // If this move results in check, play the check sound
+          if (game.isCheck()) {
+            setTimeout(() => chessAudio.playSound(ChessSoundType.MOVE_CHECK), 300);
+          }
+          
           // Switch to bot's turn
           setIsPlayerTurn(false);
           return true;
@@ -199,7 +255,9 @@ export const useBotGame = ({
     gameStatus,
     lastMove,
     getCurrentFen,
-    leaveGame
+    leaveGame,
+    lastMoveSource,
+    lastMoveDestination
   };
 };
 

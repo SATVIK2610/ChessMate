@@ -501,3 +501,25 @@
     display: inline-block;
     transform: translateY(-2px);
 }
+
+.sound-toggle {
+    margin: 10px 0;
+}
+
+.sound-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.sound-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.sound-btn:active {
+    background-color: #d0d0d0;
+}

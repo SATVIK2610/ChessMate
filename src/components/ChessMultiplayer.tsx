@@ -12,6 +12,9 @@ import './ChessMultiplayer.css';
 import useBotGame from '../lib/bot/BotGame';
 import { BotDifficulty } from '../lib/bot/engine';
 
+// Import audio service
+import { chessAudio, ChessSoundType } from '../lib/audio/ChessAudio';
+
 // Game modes
 type GameMode = 'pvp' | 'bot' | null;
 
@@ -46,6 +49,9 @@ const ChessMultiplayer: React.FC<{
   const [, setBotGameOver] = useState<string>('');
   const [botUsername, setBotUsername] = useState<string>('');
 
+  // Add state for sound
+  const [soundMuted, setSoundMuted] = useState<boolean>(false);
+
   // Call the hook at the top level with initial values
   const botGameRef = useBotGame({
     playMove,
@@ -64,6 +70,7 @@ const ChessMultiplayer: React.FC<{
   useEffect(() => {
     if (botGameRef && botGameRef.gameStatus === 'Check!') {
       toast.error('Check!', { icon: '♔' });
+      chessAudio.playSound(ChessSoundType.MOVE_CHECK);
     }
   }, [botGameRef?.gameStatus]);
 
@@ -183,6 +190,9 @@ const ChessMultiplayer: React.FC<{
       console.log("Opponent left the room.");
       toast.error("Your opponent has left the game.");
       
+      // Play notification sound
+      chessAudio.playSound(ChessSoundType.NOTIFY);
+      
       // Set opponent left flag to show the appropriate screen
       setOpponentLeft(true);
       
@@ -210,10 +220,23 @@ const ChessMultiplayer: React.FC<{
       }
     });
 
-    socket.on('opponentMove', ({ piece, position }: { piece: Piece; position: Position }) => {
+    socket.on('opponentMove', ({ piece, position, moveType }: { piece: Piece; position: Position; moveType?: string }) => {
       const moveSuccess = playMove(piece, position);
       
       if (moveSuccess) {
+        // Play appropriate sound based on move type
+        if (moveType === 'capture') {
+          chessAudio.playSound(ChessSoundType.CAPTURE);
+        } else if (moveType === 'castle') {
+          chessAudio.playSound(ChessSoundType.CASTLE);
+        } else if (moveType === 'check') {
+          chessAudio.playSound(ChessSoundType.MOVE_CHECK);
+        } else if (moveType === 'promote') {
+          chessAudio.playSound(ChessSoundType.PROMOTE);
+        } else {
+          chessAudio.playSound(ChessSoundType.MOVE);
+        }
+        
         // Switch timer when opponent makes a move
         if (activeTimer === 'white') {
           setActiveTimer('black');
@@ -233,6 +256,9 @@ const ChessMultiplayer: React.FC<{
       setGameStarted(true);
       setActiveTimer('white'); // White starts first
       setLastMoveTime(Date.now());
+      
+      // Play game start sound
+      chessAudio.playSound(ChessSoundType.GAME_START);
     });
 
     socket.on('timerInfo', ({ white, black, active }) => {
@@ -330,14 +356,21 @@ const ChessMultiplayer: React.FC<{
 
   // Function to start a bot game
   const startBotGame = (username: string, difficulty: BotDifficulty) => {
+    setPlayerColor('b');
+    
+    // Set a bot username based on difficulty
+    const botName = `Bot ${getDifficultyText(difficulty)}`;
+    setBotUsername(botName);
+    
+    // Update game state
     setGameMode('bot');
     setJoined(true);
-    // Always set player as black
-    setPlayerColor('b');
     setBotDifficulty(difficulty);
-    setBotUsername(username);
-
-    toast.success(`Started a new ${getDifficultyText(difficulty)} bot game as Black`);
+    
+    // Play game start sound
+    chessAudio.playSound(ChessSoundType.GAME_START);
+    
+    toast.success(`Started a game against ${botName}`);
   };
 
   // Helper function to get difficulty text
@@ -387,6 +420,36 @@ const ChessMultiplayer: React.FC<{
       const moveSuccess = playMove(piece, position);
 
       if (moveSuccess) {
+        // Determine move type
+        let moveType = 'normal';
+        
+        // Check if it's a capture move (destination has an opponent piece)
+        const capturedPiece = pieces.find(p => 
+          p.position.samePosition(position) && p.team !== piece.team
+        );
+        
+        if (capturedPiece) {
+          moveType = 'capture';
+          chessAudio.playSound(ChessSoundType.CAPTURE);
+        } 
+        // Check if it's a castling move (king moves 2 squares)
+        else if (piece.type === 'king' && Math.abs(piece.position.x - position.x) === 2) {
+          moveType = 'castle';
+          chessAudio.playSound(ChessSoundType.CASTLE);
+        }
+        // Check for promotion
+        else if (piece.type === 'pawn' && (position.y === 0 || position.y === 7)) {
+          moveType = 'promote';
+          chessAudio.playSound(ChessSoundType.PROMOTE);
+        }
+        // Play standard move sound
+        else {
+          chessAudio.playSound(ChessSoundType.MOVE);
+        }
+        
+        // Check if this move results in check (simplified check, server might override)
+        // We'll rely on toast notifications for this, sound will be played on next turn
+        
         // Switch timer after a successful move
         if ((piece.team === 'w' && activeTimer === 'white') || 
             (piece.team === 'b' && activeTimer === 'black')) {
@@ -394,17 +457,41 @@ const ChessMultiplayer: React.FC<{
           setLastMoveTime(Date.now());
         }
         
-        socket.emit('makeMove', { roomId, piece, position });
+        // Send both the move and the source/destination positions for highlighting
+        socket.emit('makeMove', { 
+          roomId, 
+          piece, 
+          position,
+          moveType,
+          highlightSource: piece.position,  // Original position for highlighting
+          highlightDestination: position    // New position for highlighting
+        });
+      } else {
+        // Play illegal move sound
+        chessAudio.playSound(ChessSoundType.ILLEGAL);
       }
 
       return moveSuccess;
     } 
     // For Bot mode
     else if (gameMode === 'bot' && botGameRef) {
-      return botGameRef.handlePlayerMove(piece, position);
+      const success = botGameRef.handlePlayerMove(piece, position);
+      
+      if (!success) {
+        // Play illegal move sound
+        chessAudio.playSound(ChessSoundType.ILLEGAL);
+      }
+      
+      return success;
     }
 
     return false;
+  };
+
+  // Toggle sound
+  const toggleSound = () => {
+    const newMutedState = chessAudio.toggleMute();
+    setSoundMuted(newMutedState);
   };
 
   if (!joined) {
@@ -520,31 +607,41 @@ const ChessMultiplayer: React.FC<{
     }
 
     return (
-      <Chessboard
-        playMove={handleMove}
-        pieces={pieces}
-        team={team}
-        roomId={roomId}
-        totalTurns={totalTurns}
-        leaveRoom={leaveRoom}
-      />
+      <div className="chess-multiplayer">
+        
+        
+        <Chessboard
+          playMove={handleMove}
+          pieces={pieces}
+          team={team}
+          roomId={roomId}
+          totalTurns={totalTurns}
+          leaveRoom={leaveRoom}
+        />
+      </div>
     );
   } 
   // Bot mode
   else if (gameMode === 'bot' && botGameRef) {
     return (
-      <BotChessboard
-        playMove={handleMove}
-        pieces={pieces}
-        playerColor={playerColor}
-        totalTurns={totalTurns}
-        botDifficulty={botDifficulty}
-        isPlayerTurn={botGameRef.isPlayerTurn}
-        gameStatus={botGameRef.gameStatus}
-        isCheck={botGameRef.gameStatus === 'Check!'}
-        leaveGame={leaveBotGame}
-        playerName={botUsername}
-      />
+      <div className="chess-multiplayer">
+        
+
+        <BotChessboard
+          playMove={handleMove}
+          pieces={pieces}
+          playerColor={playerColor}
+          totalTurns={totalTurns}
+          botDifficulty={botDifficulty}
+          isPlayerTurn={botGameRef.isPlayerTurn}
+          gameStatus={botGameRef.gameStatus}
+          isCheck={botGameRef.gameStatus === 'Check!'}
+          leaveGame={leaveBotGame}
+          playerName={botUsername}
+          botLastMoveSource={botGameRef.lastMoveSource}
+          botLastMoveDestination={botGameRef.lastMoveDestination}
+        />
+      </div>
     );
   }
 

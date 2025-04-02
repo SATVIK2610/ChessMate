@@ -210,3 +210,39 @@ select.inp {
         font-size: 18px;
     }
 }
+
+.sound-toggle {
+    margin: 10px 0;
+    text-align: center;
+}
+
+.sound-btn {
+    background-color: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: #779556;
+}
+
+.sound-icon {
+    width: 24px;
+    height: 24px;
+    /* filter: invert(1) ; */
+    transition: all 0.3s;
+}
+
+.sound-btn:hover {
+    /* background-color: rgba(119, 149, 86, 0.1); */
+    transform: scale(1.05);
+}
+
+.sound-btn:active {
+    /* background-color: rgba(119, 149, 86, 0.2); */
+    transform: scale(0.95);
+}

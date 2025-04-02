@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import "./Chessboard.css";
 import Tile from "../Tile/Tile";
 import { VERTICAL_AXIS, HORIZONTAL_AXIS, GRID_SIZE } from "../../Constants";
@@ -17,6 +17,8 @@ interface Props {
   isCheck?: boolean;
   leaveGame: () => void;
   playerName: string;
+  botLastMoveSource?: Position | null;
+  botLastMoveDestination?: Position | null;
 }
 
 export default function BotChessboard({ 
@@ -29,11 +31,44 @@ export default function BotChessboard({
   gameStatus,
   isCheck = false,
   leaveGame,
-  playerName
+  playerName,
+  botLastMoveSource,
+  botLastMoveDestination
 }: Props) {
   const [activePiece, setActivePiece] = useState<HTMLElement | null>(null);
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
+  const [lastMoveSource, setLastMoveSource] = useState<Position | null>(null);
+  const [lastMoveDestination, setLastMoveDestination] = useState<Position | null>(null);
   const chessboardRef = useRef<HTMLDivElement>(null);
+  
+  // Effect to update highlight state when bot move info changes
+  useEffect(() => {
+    if (botLastMoveSource && botLastMoveDestination) {
+      setLastMoveSource(botLastMoveSource);
+      setLastMoveDestination(botLastMoveDestination);
+    }
+  }, [botLastMoveSource, botLastMoveDestination]);
+
+  // Effect to clear move highlights when turn changes
+  useEffect(() => {
+    // We don't clear the highlights on turn change in the bot game
+    // The highlights should persist until the next move is made
+  }, [isPlayerTurn]);
+
+  // Update highlights when bot makes a move (when it becomes player's turn after bot's move)
+  // This will capture bot moves by looking at the previous state (if player was not in turn before and now is)
+  const prevIsPlayerTurnRef = useRef(isPlayerTurn);
+  useEffect(() => {
+    // If it was bot's turn and now it's player's turn, the bot must have moved
+    if (!prevIsPlayerTurnRef.current && isPlayerTurn) {
+      // Find the move the bot made by comparing the current pieces with previous positions
+      // (This is a heuristic approach, as we don't have direct bot move data)
+      
+      // We don't have the exact bot move, so we'll update the highlights next time the player moves
+    }
+    
+    prevIsPlayerTurnRef.current = isPlayerTurn;
+  }, [isPlayerTurn, pieces]);
 
   function getPieceAtTile(e: React.MouseEvent): Piece | undefined {
     const chessboard = chessboardRef.current;
@@ -119,7 +154,11 @@ export default function BotChessboard({
       if (currentPiece && pieceTeam === playerColor) {
         const success = playMove(currentPiece.clone(), new Position(x, y));
         
-        if (!success) {
+        if (success) {
+          // Update last move highlights when the player makes a move
+          setLastMoveSource(grabPosition);
+          setLastMoveDestination(new Position(x, y));
+        } else {
           // Reset piece position if move failed
           activePiece.style.position = "relative";
           activePiece.style.removeProperty("top");
@@ -186,6 +225,10 @@ export default function BotChessboard({
       const isKingInCheck = isCheck && piece && 
         piece.type === PieceType.KING && 
         piece.team === playerColor;
+        
+      // Check if this tile is part of the last move
+      const isLastMoveSource = lastMoveSource?.samePosition(new Position(i, row)) || false;
+      const isLastMoveDestination = lastMoveDestination?.samePosition(new Position(i, row)) || false;
 
       board.push(
         <Tile 
@@ -195,6 +238,8 @@ export default function BotChessboard({
           highlight={highlight} 
           capturable={isCapturable}
           inCheck={isKingInCheck}
+          lastMoveSource={isLastMoveSource}
+          lastMoveDestination={isLastMoveDestination}
         />
       );
     }
