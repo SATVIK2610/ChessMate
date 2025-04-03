@@ -6,6 +6,7 @@ import { VERTICAL_AXIS, HORIZONTAL_AXIS, GRID_SIZE } from "../../Constants";
 import { Piece, Position } from "../../models";
 import { useRoomContext } from "../Room/RoomContext";
 import { toast } from "react-hot-toast";
+import MoveHistorySidebar, { MoveRecord } from "../MoveHistory/MoveHistorySidebar";
 
 const socket: Socket = io("http://localhost:4000");
 
@@ -16,9 +17,11 @@ interface Props {
   roomId: string;
   totalTurns?: number;
   leaveRoom: () => void;
+  moveHistory: MoveRecord[];
+  setMoveHistory: React.Dispatch<React.SetStateAction<MoveRecord[]>>;
 }
 
-export default function Chessboard({ playMove, pieces, team, roomId, totalTurns = 0, leaveRoom }: Props) {
+export default function Chessboard({ playMove, pieces, team, roomId, totalTurns = 0, leaveRoom, moveHistory, setMoveHistory }: Props) {
   const { pl1, pl2, whiteTime, blackTime, activeTimer } = useRoomContext(); // Get usernames from context
   const [activePiece, setActivePiece] = useState<HTMLElement | null>(null);
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
@@ -27,7 +30,7 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
   const [lastMoveSource, setLastMoveSource] = useState<Position | null>(null);
   const [lastMoveDestination, setLastMoveDestination] = useState<Position | null>(null);
   const chessboardRef = useRef<HTMLDivElement>(null);
-
+  
   useEffect(() => {
     // console.log("Component rendered with team:", team, "socket id:", socket.id);
     
@@ -36,14 +39,30 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
       position: Position;
       highlightSource: Position;
       highlightDestination: Position;
+      moveType?: string;
     }) => {
-      const { piece, position, highlightSource, highlightDestination } = moveData;
+      const { piece, position, highlightSource, highlightDestination, moveType } = moveData;
       const moveSuccess = playMove(piece, position);
       
       if (moveSuccess) {
         // Update last move highlights when opponent makes a move
         setLastMoveSource(highlightSource);
         setLastMoveDestination(highlightDestination);
+        
+        // Add the opponent's move to the move history
+        const newMove: MoveRecord = {
+          piece: piece.type,
+          from: highlightSource.clone(),
+          to: position.clone(),
+          team: piece.team as 'w' | 'b',
+          capture: moveType === 'capture',
+          check: moveType === 'check',
+          promotion: moveType === 'promote',
+          castle: moveType === 'castle' ? 
+            (position.x === 6 ? 'kingside' : 'queenside') : undefined
+        };
+        
+        setMoveHistory(prev => [...prev, newMove]);
       }
     });
 
@@ -154,15 +173,62 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
         Math.floor((e.clientY - chessboard.offsetTop) / GRID_SIZE);
 
       const currentPiece = pieces.find((p) => p.samePosition(grabPosition));
+      const newPosition = new Position(x, y);
 
       if (currentPiece) {
-        const success = playMove(currentPiece.clone(), new Position(x, y));
+        const success = playMove(currentPiece.clone(), newPosition);
         if (success) {
           // Update last move highlights when the local player makes a move
           setLastMoveSource(grabPosition);
-          setLastMoveDestination(new Position(x, y));
+          setLastMoveDestination(newPosition);
           
-          socket.emit("makeMove", { roomId, piece: currentPiece, position: new Position(x, y) });
+          // Determine move type
+          let moveType = 'normal';
+          
+          // Check if it's a capture move
+          const isCapture = pieces.some(p => 
+            p.position.samePosition(newPosition) && p.team !== currentPiece.team
+          );
+          
+          // Check if it's a castle move (king moves 2 squares)
+          const isCastle = currentPiece.type === 'king' && 
+            Math.abs(grabPosition.x - newPosition.x) === 2;
+            
+          // Check for promotion (pawn reaches the end)
+          const isPromotion = currentPiece.type === 'pawn' && 
+            (newPosition.y === 0 || newPosition.y === 7);
+            
+          if (isCapture) {
+            moveType = 'capture';
+          } else if (isCastle) {
+            moveType = 'castle';
+          } else if (isPromotion) {
+            moveType = 'promote';
+          }
+          
+          // Add the move to the move history
+          const newMove: MoveRecord = {
+            piece: currentPiece.type,
+            from: grabPosition.clone(),
+            to: newPosition.clone(),
+            team: currentPiece.team as 'w' | 'b',
+            capture: isCapture,
+            check: false, // We'll know this after the move is processed
+            promotion: isPromotion,
+            castle: isCastle ? 
+              (newPosition.x === 6 ? 'kingside' : 'queenside') : undefined
+          };
+          
+          setMoveHistory(prev => [...prev, newMove]);
+          
+          socket.emit("makeMove", { 
+            roomId, 
+            piece: currentPiece, 
+            position: newPosition,
+            moveType,
+            highlightSource: grabPosition,
+            highlightDestination: newPosition
+          });
         } else {
           // Reset piece position if move failed
           activePiece.style.position = "relative";
@@ -306,6 +372,9 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
         >
           {board}
         </div>
+        
+        {/* Add Move History Sidebar */}
+        <MoveHistorySidebar moves={moveHistory} playerColor={team as 'w' | 'b'} />
       </div>
     </>
   );

@@ -1,0 +1,140 @@
+.move-history-sidebar {
+  width: 300px;
+  height: 765px;
+  background-color: #242424;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  color: white;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  margin-left: 20px;
+}
+
+.move-history-title {
+  font-size: 22px;
+  margin: 0 0 15px 0;
+  color: #ddd;
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #444;
+}
+
+.move-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  flex-grow: 1;
+  table-layout: fixed;
+}
+
+.move-history-container {
+  overflow-y: auto;
+  flex-grow: 1;
+  margin-bottom: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #779556 #333;
+  width: 100%;
+}
+
+.move-history-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.move-history-container::-webkit-scrollbar-track {
+  background: #333;
+  border-radius: 4px;
+}
+
+.move-history-container::-webkit-scrollbar-thumb {
+  background-color: #779556;
+  border-radius: 4px;
+}
+
+.move-history-table tr {
+  width: 100%;
+}
+
+.move-history-table th, 
+.move-history-table td {
+  padding: 6px 2px;
+}
+
+.move-history-table th {
+  background-color: #333;
+  font-weight: 600;
+  text-align: center;
+  color: #aaa;
+  border-bottom: 2px solid #444;
+}
+
+.move-history-table td {
+  text-align: center;
+  font-family: monospace;
+  font-size: 14px;
+  border-bottom: 1px solid #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.move-history-table tr:nth-child(odd) {
+  background-color: #2a2a2a;
+}
+
+.move-history-table tr:hover {
+  background-color: #333;
+}
+
+.move-number {
+  color: #aaa;
+  font-weight: 600;
+  width: 15%;
+  text-align: center;
+}
+
+.move-cell {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  width: 42.5%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.move-cell:hover {
+  background-color: rgba(119, 149, 86, 0.3);
+}
+
+.current-move {
+  background-color: rgba(119, 149, 86, 0.5);
+  font-weight: bold;
+}
+
+.white-move {
+  color: #fff;
+}
+
+.black-move {
+  color: #ccc;
+}
+
+/* Remove first-letter styling which can cause rendering issues */
+.white-move:first-letter,
+.black-move:first-letter {
+  font-size: inherit;
+  margin-right: 0;
+}
+
+/* Add specific styles for piece symbols as span elements */
+.piece-symbol {
+  font-size: 18px;
+  margin-right: 1px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.notation-piece {
+  margin-right: 4px;
+  font-weight: bold;
+  font-size: 20px;
+} 

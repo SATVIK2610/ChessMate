@@ -5,6 +5,7 @@ import { VERTICAL_AXIS, HORIZONTAL_AXIS, GRID_SIZE } from "../../Constants";
 import { Piece, Position } from "../../models";
 import { PieceType } from "../../Types";
 import { BotDifficulty } from "../../lib/bot/engine";
+import MoveHistorySidebar, { MoveRecord } from "../MoveHistory/MoveHistorySidebar";
 
 interface Props {
   playMove: (piece: Piece, position: Position) => boolean;
@@ -19,6 +20,8 @@ interface Props {
   playerName: string;
   botLastMoveSource?: Position | null;
   botLastMoveDestination?: Position | null;
+  moveHistory: MoveRecord[];
+  setMoveHistory: React.Dispatch<React.SetStateAction<MoveRecord[]>>;
 }
 
 export default function BotChessboard({ 
@@ -33,7 +36,9 @@ export default function BotChessboard({
   leaveGame,
   playerName,
   botLastMoveSource,
-  botLastMoveDestination
+  botLastMoveDestination,
+  moveHistory,
+  setMoveHistory
 }: Props) {
   const [activePiece, setActivePiece] = useState<HTMLElement | null>(null);
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
@@ -69,6 +74,37 @@ export default function BotChessboard({
     
     prevIsPlayerTurnRef.current = isPlayerTurn;
   }, [isPlayerTurn, pieces]);
+
+  // Effect to update move history when bot makes a move
+  useEffect(() => {
+    if (botLastMoveSource && botLastMoveDestination && !isPlayerTurn) {
+      // Find the piece that moved
+      const movedPiece = pieces.find(
+        p => p.position.samePosition(botLastMoveDestination!) && p.team !== playerColor
+      );
+      
+      if (movedPiece) {
+        // Check if the move was a capture
+        const isCapture = pieces.some(p => 
+          p.team === playerColor && 
+          p.position.samePosition(botLastMoveDestination!)
+        );
+        
+        // Add bot's move to history
+        const newMove: MoveRecord = {
+          piece: movedPiece.type,
+          from: botLastMoveSource.clone(),
+          to: botLastMoveDestination.clone(),
+          team: movedPiece.team as 'w' | 'b',
+          capture: isCapture,
+          check: isCheck, // This will be true if the bot put the player in check
+          // Other properties would be determined from actual move data
+        };
+        
+        setMoveHistory(prev => [...prev, newMove]);
+      }
+    }
+  }, [botLastMoveSource, botLastMoveDestination, isPlayerTurn, pieces, playerColor, isCheck, setMoveHistory]);
 
   function getPieceAtTile(e: React.MouseEvent): Piece | undefined {
     const chessboard = chessboardRef.current;
@@ -152,12 +188,32 @@ export default function BotChessboard({
       const pieceTeam = currentPiece?.team === 'w' ? 'w' : 'b';
       
       if (currentPiece && pieceTeam === playerColor) {
-        const success = playMove(currentPiece.clone(), new Position(x, y));
+        const newPosition = new Position(x, y);
+        const success = playMove(currentPiece.clone(), newPosition);
         
         if (success) {
           // Update last move highlights when the player makes a move
           setLastMoveSource(grabPosition);
-          setLastMoveDestination(new Position(x, y));
+          setLastMoveDestination(newPosition);
+          
+          // Check if the move was a capture
+          const isCapture = pieces.some(p => 
+            p.team !== playerColor && 
+            p.position.samePosition(newPosition)
+          );
+          
+          // Add player's move to history
+          const newMove: MoveRecord = {
+            piece: currentPiece.type,
+            from: grabPosition.clone(),
+            to: newPosition.clone(),
+            team: currentPiece.team as 'w' | 'b',
+            capture: isCapture,
+            check: gameStatus === 'Check!', // Set check based on the current game status
+            // Other properties would be determined from actual move data
+          };
+          
+          setMoveHistory(prev => [...prev, newMove]);
         } else {
           // Reset piece position if move failed
           activePiece.style.position = "relative";
@@ -297,6 +353,9 @@ export default function BotChessboard({
         >
           {board}
         </div>
+        
+        {/* Add Move History Sidebar */}
+        <MoveHistorySidebar moves={moveHistory} playerColor={playerColor} />
       </div>
     </>
   );

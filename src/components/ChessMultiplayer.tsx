@@ -15,6 +15,9 @@ import { BotDifficulty } from '../lib/bot/engine';
 // Import audio service
 import { chessAudio, ChessSoundType } from '../lib/audio/ChessAudio';
 
+// Import MoveRecord type for the move history
+import MoveHistorySidebar, { MoveRecord } from "./MoveHistory/MoveHistorySidebar";
+
 // Game modes
 type GameMode = 'pvp' | 'bot' | null;
 
@@ -51,6 +54,12 @@ const ChessMultiplayer: React.FC<{
 
   // Add state for sound
   const [soundMuted, setSoundMuted] = useState<boolean>(false);
+
+  // Add a state variable to track the human player's username
+  const [humanUsername, setHumanUsername] = useState<string>('');
+
+  // Add state for move history
+  const [moveHistory, setMoveHistory] = useState<MoveRecord[]>([]);
 
   // Call the hook at the top level with initial values
   const botGameRef = useBotGame({
@@ -96,6 +105,7 @@ const ChessMultiplayer: React.FC<{
     setBlackTime(timer * 60);
     setUserList([]);
     setOpponentLeft(false);
+    setMoveHistory([]); // Clear move history
   }, [setRoomId, setPl1, setPl2, setGameStarted, setActiveTimer, setTimersInitialized, setWhiteTime, setBlackTime, timer]);
 
   // Initialize timers only once when component mounts or timer value changes
@@ -220,7 +230,13 @@ const ChessMultiplayer: React.FC<{
       }
     });
 
-    socket.on('opponentMove', ({ piece, position, moveType }: { piece: Piece; position: Position; moveType?: string }) => {
+    socket.on('opponentMove', ({ piece, position, moveType, highlightSource, highlightDestination }: { 
+      piece: Piece; 
+      position: Position; 
+      moveType?: string;
+      highlightSource: Position;
+      highlightDestination: Position;
+    }) => {
       const moveSuccess = playMove(piece, position);
       
       if (moveSuccess) {
@@ -245,6 +261,21 @@ const ChessMultiplayer: React.FC<{
         }
         
         setLastMoveTime(Date.now());
+        
+        // Add move to move history
+        const newMove: MoveRecord = {
+          piece: piece.type,
+          from: highlightSource,
+          to: position,
+          team: piece.team as 'w' | 'b',
+          capture: moveType === 'capture',
+          check: moveType === 'check',
+          promotion: moveType === 'promote',
+          castle: moveType === 'castle' ? 
+            (position.x === 6 ? 'kingside' : 'queenside') : undefined
+        };
+        
+        setMoveHistory(prev => [...prev, newMove]);
       }
     });
     
@@ -358,6 +389,9 @@ const ChessMultiplayer: React.FC<{
   const startBotGame = (username: string, difficulty: BotDifficulty) => {
     setPlayerColor('b');
     
+    // Set the human player's username
+    setHumanUsername(username);
+    
     // Set a bot username based on difficulty
     const botName = `Bot ${getDifficultyText(difficulty)}`;
     setBotUsername(botName);
@@ -392,6 +426,7 @@ const ChessMultiplayer: React.FC<{
     setGameMode(null);
     setJoined(false);
     setBotGameOver('');
+    setMoveHistory([]); // Clear move history
     resetGameState();
     toast("You left the bot game.");
   };
@@ -617,6 +652,8 @@ const ChessMultiplayer: React.FC<{
           roomId={roomId}
           totalTurns={totalTurns}
           leaveRoom={leaveRoom}
+          moveHistory={moveHistory}
+          setMoveHistory={setMoveHistory}
         />
       </div>
     );
@@ -637,9 +674,11 @@ const ChessMultiplayer: React.FC<{
           gameStatus={botGameRef.gameStatus}
           isCheck={botGameRef.gameStatus === 'Check!'}
           leaveGame={leaveBotGame}
-          playerName={botUsername}
+          playerName={humanUsername}
           botLastMoveSource={botGameRef.lastMoveSource}
           botLastMoveDestination={botGameRef.lastMoveDestination}
+          moveHistory={moveHistory}
+          setMoveHistory={setMoveHistory}
         />
       </div>
     );
