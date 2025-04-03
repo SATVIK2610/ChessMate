@@ -16,7 +16,7 @@ import { BotDifficulty } from '../lib/bot/engine';
 import { chessAudio, ChessSoundType } from '../lib/audio/ChessAudio';
 
 // Import MoveRecord type for the move history
-import MoveHistorySidebar, { MoveRecord } from "./MoveHistory/MoveHistorySidebar";
+import { MoveRecord } from "./MoveHistory/MoveHistorySidebar";
 
 // Game modes
 type GameMode = 'pvp' | 'bot' | null;
@@ -50,10 +50,7 @@ const ChessMultiplayer: React.FC<{
   const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>(BotDifficulty.EASY);
   const [playerColor, setPlayerColor] = useState<'w' | 'b'>('w');
   const [, setBotGameOver] = useState<string>('');
-  const [botUsername, setBotUsername] = useState<string>('');
-
-  // Add state for sound
-  const [soundMuted, setSoundMuted] = useState<boolean>(false);
+  const [, setBotUsername] = useState<string>('');
 
   // Add a state variable to track the human player's username
   const [humanUsername, setHumanUsername] = useState<string>('');
@@ -521,12 +518,6 @@ const ChessMultiplayer: React.FC<{
     }
 
     return false;
-  };
-
-  // Toggle sound
-  const toggleSound = () => {
-    const newMutedState = chessAudio.toggleMute();
-    setSoundMuted(newMutedState);
   };
 
   if (!joined) {

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import { Piece, Position } from '../../models';
-import { PieceType, TeamType } from '../../Types';
+import { PieceType } from '../../Types';
 import { calculateBotMove, BotDifficulty } from './engine';
 import { toast } from 'react-hot-toast';
 import { chessAudio, ChessSoundType } from '../audio/ChessAudio';

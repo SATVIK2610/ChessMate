@@ -340,7 +340,7 @@ export default function BotChessboard({
             </div>
             
             <button onClick={leaveGame} className="leave-btn sidebar-leave-btn">
-              Back to Menu
+              Leave
             </button>
           </div>
         </div>
