@@ -38,6 +38,8 @@
 
 .tile img {
     width: 85px;
+    object-fit: contain;
+    height: auto;
 }
 
 /* King in check highlight style */

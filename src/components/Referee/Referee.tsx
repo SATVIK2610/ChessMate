@@ -6,6 +6,7 @@ import { Pawn } from "../../models/Pawn";
 // import { Position } from "../../models/Position";
 import { PieceType, TeamType } from "../../Types";
 import ChessMultiplayer from "../ChessMultiplayer";
+import ThemeToggle from "../ThemeToggle";
 
 export default function Referee() {
     const [board, setBoard] = useState<Board>(initialBoard.clone());
@@ -138,6 +139,7 @@ export default function Referee() {
 
     return (
         <>
+            <ThemeToggle />
             <div className="modal hidden" ref={modalRef}>
                 <div className="modal-body">
                     <img alt="rook" onClick={() => promotePawn(PieceType.ROOK)} src={`/assets/images/rook_${promotionTeamType()}.png`} />

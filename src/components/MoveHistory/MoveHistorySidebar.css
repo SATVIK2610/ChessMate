@@ -9,6 +9,14 @@
   display: flex;
   flex-direction: column;
   margin-left: 20px;
+  transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Light mode styles for move history sidebar */
+.light-mode .move-history-sidebar {
+  background-color: #ffffff;
+  color: #333;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .move-history-title {
@@ -18,6 +26,13 @@
   text-align: center;
   padding-bottom: 10px;
   border-bottom: 1px solid #444;
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Light mode styles for title */
+.light-mode .move-history-title {
+  color: #333;
+  border-bottom: 1px solid #ddd;
 }
 
 .move-history-table {
@@ -34,6 +49,12 @@
   scrollbar-width: thin;
   scrollbar-color: #779556 #333;
   width: 100%;
+  transition: scrollbar-color 0.3s ease;
+}
+
+/* Light mode scrollbar */
+.light-mode .move-history-container {
+  scrollbar-color: #779556 #f0f0f0;
 }
 
 .move-history-container::-webkit-scrollbar {
@@ -43,6 +64,12 @@
 .move-history-container::-webkit-scrollbar-track {
   background: #333;
   border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+/* Light mode scrollbar track */
+.light-mode .move-history-container::-webkit-scrollbar-track {
+  background: #f0f0f0;
 }
 
 .move-history-container::-webkit-scrollbar-thumb {
@@ -65,6 +92,14 @@
   text-align: center;
   color: #aaa;
   border-bottom: 2px solid #444;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Light mode table headers */
+.light-mode .move-history-table th {
+  background-color: #f0f0f0;
+  color: #555;
+  border-bottom: 2px solid #ddd;
 }
 
 .move-history-table td {
@@ -74,14 +109,32 @@
   border-bottom: 1px solid #333;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: border-color 0.3s ease;
+}
+
+/* Light mode table cells */
+.light-mode .move-history-table td {
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .move-history-table tr:nth-child(odd) {
   background-color: #2a2a2a;
+  transition: background-color 0.3s ease;
+}
+
+/* Light mode odd rows */
+.light-mode .move-history-table tr:nth-child(odd) {
+  background-color: #f7f7f7;
 }
 
 .move-history-table tr:hover {
   background-color: #333;
+  transition: background-color 0.3s ease;
+}
+
+/* Light mode row hover */
+.light-mode .move-history-table tr:hover {
+  background-color: #e8f0e3;
 }
 
 .move-number {
@@ -89,6 +142,12 @@
   font-weight: 600;
   width: 15%;
   text-align: center;
+  transition: color 0.3s ease;
+}
+
+/* Light mode move numbers */
+.light-mode .move-number {
+  color: #666;
 }
 
 .move-cell {
@@ -105,17 +164,39 @@
   background-color: rgba(119, 149, 86, 0.3);
 }
 
+/* Light mode cell hover */
+.light-mode .move-cell:hover {
+  background-color: rgba(119, 149, 86, 0.2);
+}
+
 .current-move {
   background-color: rgba(119, 149, 86, 0.5);
   font-weight: bold;
 }
 
+/* Light mode current move */
+.light-mode .current-move {
+  background-color: rgba(119, 149, 86, 0.3);
+}
+
 .white-move {
   color: #fff;
+  transition: color 0.3s ease;
+}
+
+/* Light mode white moves */
+.light-mode .white-move {
+  color: #222;
 }
 
 .black-move {
   color: #ccc;
+  transition: color 0.3s ease;
+}
+
+/* Light mode black moves */
+.light-mode .black-move {
+  color: #444;
 }
 
 /* Remove first-letter styling which can cause rendering issues */

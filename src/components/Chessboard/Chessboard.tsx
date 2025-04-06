@@ -333,7 +333,7 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
           </div>
           
           <div className="lower">
-            <h3>Players:</h3>
+            <h3>Players</h3>
             
             {/* White player with timer */}
             <div className={`user ${activeTimer === 'white' ? 'active-timer' : ''}`}>

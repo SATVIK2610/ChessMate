@@ -16,6 +16,14 @@
     color: white;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     width: 500px;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Light mode styles for waiting-screen */
+.light-mode .waiting-screen {
+    background-color: #ffffff;
+    color: #333;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .waiting-screen h2 {
@@ -32,6 +40,12 @@
     margin-bottom: 20px;
     font-size: 18px;
     color: #ddd;
+    transition: color 0.3s ease;
+}
+
+/* Light mode styles for waiting-screen paragraphs */
+.light-mode .waiting-screen p {
+    color: #555;
 }
 
 .room-id-display {
@@ -57,6 +71,14 @@
     align-items: center;
     justify-content: center;
     font-weight: 500;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Light mode styles for room-id-display span */
+.light-mode .room-id-display span {
+    background-color: #f0f0f0;
+    border-color: #ddd;
+    color: #333;
 }
 
 .copy-btn {
@@ -116,6 +138,14 @@
     color: white;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     width: 600px;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Light mode styles for start-game-screen */
+.light-mode .start-game-screen {
+    background-color: #ffffff;
+    color: #333;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .start-game-screen h2 {
@@ -143,6 +173,13 @@
     padding: 20px;
     border-radius: 12px;
     width: 200px;
+    transition: background-color 0.3s ease;
+}
+
+/* Light mode styles for player-card */
+.light-mode .player-card {
+    background-color: #f0f0f0;
+    color: #333;
 }
 
 .avatar {
@@ -172,11 +209,23 @@
 .player-card span {
     font-size: 18px;
     margin-bottom: 5px;
+    transition: color 0.3s ease;
+}
+
+/* Light mode player names in cards */
+.light-mode .player-card span {
+    color: #333;
 }
 
 .player-card .team {
     font-size: 14px;
     color: #aaa;
+    transition: color 0.3s ease;
+}
+
+/* Light mode team text */
+.light-mode .player-card .team {
+    color: #777;
 }
 
 .vs {
@@ -191,6 +240,13 @@
     background-color: #333;
     border-radius: 8px;
     font-size: 18px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light mode styles for timer-info */
+.light-mode .timer-info {
+    background-color: #f0f0f0;
+    color: #333;
 }
 
 .start-btn {
@@ -226,7 +282,14 @@
     background-color: #242424;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
+    transition: all 0.2s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Light mode player info */
+.light-mode .player-info {
+    background-color: #ffffff;
+    color: #333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .player-info .avatar {
@@ -239,6 +302,12 @@
 
 .player-info span {
     margin-right: 15px;
+    transition: color 0.3s ease;
+}
+
+/* Light mode player name */
+.light-mode .player-info span {
+    color: #333;
 }
 
 .player-info .timer {
@@ -249,6 +318,13 @@
     font-size: 18px;
     min-width: 70px;
     text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+/* Light mode timer */
+.light-mode .player-info .timer {
+    background-color: #f0f0f0;
+    color: #333;
 }
 
 .current-turn {
@@ -267,6 +343,14 @@
     width: 500px;
     position: relative;
     overflow: hidden;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Light mode styles for ready-to-play */
+.light-mode .ready-to-play {
+    background-color: #ffffff;
+    color: #333;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes gradientBorder {
@@ -304,6 +388,12 @@
     padding: 12px 15px;
     margin-bottom: 20px;
     border-left: 3px solid #779556;
+    transition: background-color 0.3s ease;
+}
+
+/* Light mode room-id-section */
+.light-mode .room-id-section {
+    background-color: #f0f0f0;
 }
 
 .room-id-label {
@@ -312,6 +402,12 @@
     text-transform: uppercase;
     text-align: left;
     margin-bottom: 5px;
+    transition: color 0.3s ease;
+}
+
+/* Light mode room-id-label */
+.light-mode .room-id-label {
+    color: #666;
 }
 
 .room-id-value {
@@ -351,12 +447,23 @@
     border-radius: 12px;
     padding: 15px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
+    transition: all 0.3s ease, background-color 0.3s ease;
 }
 
 .player-vs-section:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Light mode player-vs-section */
+.light-mode .player-vs-section {
+    background-color: #f0f0f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Light mode player-vs-section hover */
+.light-mode .player-vs-section:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 .player-card {
@@ -406,12 +513,24 @@
 .player-name {
     font-size: 16px;
     font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+/* Light mode player name */
+.light-mode .player-name {
+    color: #333;
 }
 
 .player-color {
     font-size: 14px;
     color: #aaa;
     margin-top: 2px;
+    transition: color 0.3s ease;
+}
+
+/* Light mode player color */
+.light-mode .player-color {
+    color: #777;
 }
 
 .vs-text {
@@ -429,6 +548,12 @@
     align-items: center;
     justify-content: center;
     border-left: 3px solid #779556;
+    transition: background-color 0.3s ease;
+}
+
+/* Light mode timer-section */
+.light-mode .timer-section {
+    background-color: #f0f0f0;
 }
 
 .timer-icon {
@@ -441,6 +566,12 @@
     font-family: monospace;
     font-size: 18px;
     font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+/* Light mode timer-value */
+.light-mode .timer-value {
+    color: #333;
 }
 
 .start-game-btn {
@@ -472,6 +603,13 @@
     font-size: 16px;
     border-left: 3px solid #779556;
     text-align: left;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light mode waiting-message */
+.light-mode .waiting-message {
+    background-color: #f0f0f0;
+    color: #444;
 }
 
 .ready-to-play .leave-btn {
@@ -514,4 +652,50 @@
     cursor: pointer;
     font-size: 14px;
     transition: background-color 0.3s;
+}
+
+/* Bot game UI elements */
+.game-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+    background-color: #27272a;
+    padding: 12px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light mode game info */
+.light-mode .game-info {
+    background-color: #ffffff;
+    color: #333;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bot-difficulty {
+    font-size: 14px;
+    color: #e4e4e7;
+    padding: 5px 0;
+    transition: color 0.3s ease;
+}
+
+/* Light mode bot difficulty */
+.light-mode .bot-difficulty {
+    color: #555;
+}
+
+.game-status {
+    font-weight: bold;
+    color: #fbbf24;
+    padding: 5px 0;
+    border-top: 1px solid #3f3f46;
+    margin-top: 5px;
+    transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Light mode game status */
+.light-mode .game-status {
+    color: #d97706;
+    border-top: 1px solid #e5e5e5;
 }

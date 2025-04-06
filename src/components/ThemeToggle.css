@@ -1,0 +1,45 @@
+.theme-toggle-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 2px solid #779556;
+  color: white;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  padding: 0;
+}
+
+.theme-toggle-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Light mode styles */
+.light-mode .theme-toggle-btn {
+  background-color: rgba(255, 255, 255, 0.7);
+  color: #333;
+  border-color: #779556;
+}
+
+/* Image styles to prevent distortion */
+.theme-toggle-btn img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+  margin: 0;
+}
+
+/* Make brightness icon white in dark mode */
+body:not(.light-mode) .theme-toggle-btn img[src*="brightness.png"] {
+  filter: brightness(0) invert(1);
+} 

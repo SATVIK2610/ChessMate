@@ -321,7 +321,7 @@ export default function BotChessboard({
           </div>
           
           <div className="lower">
-            <h3>Players:</h3>
+            <h3>Players</h3>
             
             {/* White player */}
             <div className={`user ${(playerColor === 'w' && isPlayersTurn) || (playerColor === 'b' && !isPlayersTurn) ? 'active-timer' : ''}`}>

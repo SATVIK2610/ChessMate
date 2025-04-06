@@ -11,6 +11,13 @@ body {
   color: white;
   height: 100vh;
   overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light mode styles */
+body.light-mode {
+  background-color: #f5f5f5;
+  color: #333;
 }
 
 code {
