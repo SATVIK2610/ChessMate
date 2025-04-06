@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import io, { Socket } from 'socket.io-client';
 import Chessboard from './Chessboard/Chessboard';
-import BotChessboard from './Chessboard/BotChessboard';
 import { Piece, Position } from '../models/index';
 import { toast } from 'react-hot-toast';
 import Room from './Room/Room';
@@ -634,9 +633,8 @@ const ChessMultiplayer: React.FC<{
 
     return (
       <div className="chess-multiplayer">
-        
-        
         <Chessboard
+          mode="multiplayer"
           playMove={handleMove}
           pieces={pieces}
           team={team}
@@ -653,9 +651,8 @@ const ChessMultiplayer: React.FC<{
   else if (gameMode === 'bot' && botGameRef) {
     return (
       <div className="chess-multiplayer">
-        
-
-        <BotChessboard
+        <Chessboard
+          mode="bot"
           playMove={handleMove}
           pieces={pieces}
           playerColor={playerColor}

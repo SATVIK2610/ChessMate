@@ -7,32 +7,79 @@ import { Piece, Position } from "../../models";
 import { useRoomContext } from "../Room/RoomContext";
 import { toast } from "react-hot-toast";
 import MoveHistorySidebar, { MoveRecord } from "../MoveHistory/MoveHistorySidebar";
+import { PieceType } from "../../Types";
+import { BotDifficulty } from "../../lib/bot/engine";
 
 const socket: Socket = io("http://localhost:4000");
 
-interface Props {
+interface BaseProps {
   playMove: (piece: Piece, position: Position) => boolean;
   pieces: Piece[];
-  team: string;
-  roomId: string;
-  totalTurns?: number;
-  leaveRoom: () => void;
   moveHistory: MoveRecord[];
   setMoveHistory: React.Dispatch<React.SetStateAction<MoveRecord[]>>;
+  totalTurns?: number;
 }
 
-export default function Chessboard({ playMove, pieces, team, roomId, totalTurns = 0, leaveRoom, moveHistory, setMoveHistory }: Props) {
-  const { pl1, pl2, whiteTime, blackTime, activeTimer } = useRoomContext(); // Get usernames from context
+interface MultiplayerProps extends BaseProps {
+  mode: 'multiplayer';
+  team: string;
+  roomId: string;
+  leaveRoom: () => void;
+}
+
+interface BotProps extends BaseProps {
+  mode: 'bot';
+  playerColor: 'w' | 'b';
+  botDifficulty: BotDifficulty;
+  isPlayerTurn: boolean;
+  gameStatus: string;
+  isCheck?: boolean;
+  leaveGame: () => void;
+  playerName: string;
+  botLastMoveSource?: Position | null;
+  botLastMoveDestination?: Position | null;
+}
+
+type Props = MultiplayerProps | BotProps;
+
+export default function Chessboard(props: Props) {
   const [activePiece, setActivePiece] = useState<HTMLElement | null>(null);
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
-  const [, setUsernames] = useState<{id: string, username: string}[]>([]);
-  const [, setOpponent] = useState<string>('');
   const [lastMoveSource, setLastMoveSource] = useState<Position | null>(null);
   const [lastMoveDestination, setLastMoveDestination] = useState<Position | null>(null);
   const chessboardRef = useRef<HTMLDivElement>(null);
   
+  // Multiplayer specific states
+  const [, setUsernames] = useState<{id: string, username: string}[]>([]);
+  const [, setOpponent] = useState<string>('');
+  
+  // Always call hooks unconditionally at the top level
+  const roomContext = useRoomContext();
+  // Then conditionally use the values
+  const pl1 = props.mode === 'multiplayer' ? roomContext.pl1 : undefined;
+  const pl2 = props.mode === 'multiplayer' ? roomContext.pl2 : undefined;
+  const whiteTime = props.mode === 'multiplayer' ? roomContext.whiteTime : undefined;
+  const blackTime = props.mode === 'multiplayer' ? roomContext.blackTime : undefined;
+  const activeTimer = props.mode === 'multiplayer' ? roomContext.activeTimer : undefined;
+
+  // Determine if player is white team based on mode
+  const isWhiteTeam = props.mode === 'multiplayer' 
+    ? props.team === 'w' 
+    : props.playerColor === 'w';
+  
+  // Handle bot mode highlighting
   useEffect(() => {
-    // console.log("Component rendered with team:", team, "socket id:", socket.id);
+    if (props.mode === 'bot' && props.botLastMoveSource && props.botLastMoveDestination) {
+      setLastMoveSource(props.botLastMoveSource);
+      setLastMoveDestination(props.botLastMoveDestination);
+    }
+  }, [props.mode === 'bot' ? [props.botLastMoveSource, props.botLastMoveDestination] : []]);
+
+  // Multiplayer socket setup
+  useEffect(() => {
+    if (props.mode !== 'multiplayer') return;
+    
+    const { team, roomId } = props;
     
     socket.on("opponentMove", (moveData: { 
       piece: Piece; 
@@ -42,7 +89,7 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
       moveType?: string;
     }) => {
       const { piece, position, highlightSource, highlightDestination, moveType } = moveData;
-      const moveSuccess = playMove(piece, position);
+      const moveSuccess = props.playMove(piece, position);
       
       if (moveSuccess) {
         // Update last move highlights when opponent makes a move
@@ -62,7 +109,7 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
             (position.x === 6 ? 'kingside' : 'queenside') : undefined
         };
         
-        setMoveHistory(prev => [...prev, newMove]);
+        props.setMoveHistory(prev => [...prev, newMove]);
       }
     });
 
@@ -101,7 +148,42 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
       socket.off("opponentMove");
       socket.off('userList');
     };
-  }, [playMove, team]);
+  }, [props.mode === 'multiplayer' ? [props.playMove, props.team] : []]);
+
+  // Bot mode - update move history when bot makes a move
+  useEffect(() => {
+    if (props.mode !== 'bot') return;
+    
+    const { botLastMoveSource, botLastMoveDestination, isPlayerTurn, pieces, playerColor, isCheck } = props;
+    
+    if (botLastMoveSource && botLastMoveDestination && !isPlayerTurn) {
+      // Find the piece that moved
+      const movedPiece = pieces.find(
+        p => p.position.samePosition(botLastMoveDestination!) && p.team !== playerColor
+      );
+      
+      if (movedPiece) {
+        // Check if the move was a capture
+        const isCapture = pieces.some(p => 
+          p.team === playerColor && 
+          p.position.samePosition(botLastMoveDestination!)
+        );
+        
+        // Add bot's move to history
+        const newMove: MoveRecord = {
+          piece: movedPiece.type,
+          from: botLastMoveSource.clone(),
+          to: botLastMoveDestination.clone(),
+          team: movedPiece.team as 'w' | 'b',
+          capture: isCapture,
+          check: isCheck, // This will be true if the bot put the player in check
+          // Other properties would be determined from actual move data
+        };
+        
+        props.setMoveHistory(prev => [...prev, newMove]);
+      }
+    }
+  }, [props.mode === 'bot' ? [props.botLastMoveSource, props.botLastMoveDestination, props.isPlayerTurn, props.pieces, props.playerColor, props.isCheck] : []]);
 
   function getPieceAtTile(e: React.MouseEvent): Piece | undefined {
     const chessboard = chessboardRef.current;
@@ -112,15 +194,25 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
       HORIZONTAL_AXIS.length - 1 - Math.floor((e.clientY - chessboard.offsetTop) / GRID_SIZE) :
       Math.floor((e.clientY - chessboard.offsetTop) / GRID_SIZE);
 
-    return pieces.find((piece) => piece.position.samePosition(new Position(x, y)));
+    return props.pieces.find((piece) => piece.position.samePosition(new Position(x, y)));
   }
 
   function grabPiece(e: React.MouseEvent) {
     const element = e.target as HTMLElement;
     const chessboard = chessboardRef.current;
     e.preventDefault();
+    
+    // For bot mode, check if it's player's turn
+    if (props.mode === 'bot' && !props.isPlayerTurn) return;
+    
     const currentPiece = getPieceAtTile(e);
-    if (element.classList.contains("chess-piece") && chessboard && currentPiece?.team === team) {
+    
+    // Check if it's the player's piece
+    const isPlayerPiece = props.mode === 'multiplayer' 
+      ? currentPiece?.team === props.team
+      : currentPiece?.team === props.playerColor;
+    
+    if (element.classList.contains("chess-piece") && chessboard && currentPiece && isPlayerPiece) {
       const grabX = Math.floor((e.clientX - chessboard.offsetLeft) / GRID_SIZE);
       const grabY = isWhiteTeam ? 
         HORIZONTAL_AXIS.length - 1 - Math.floor((e.clientY - chessboard.offsetTop) / GRID_SIZE) :
@@ -143,8 +235,14 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
 
   function movePiece(e: React.MouseEvent) {
     const chessboard = chessboardRef.current;
-    const currentPiece = pieces.find((p) => p.samePosition(grabPosition));
-    if (activePiece && chessboard && currentPiece?.team === team) {
+    const currentPiece = props.pieces.find((p) => p.samePosition(grabPosition));
+    
+    // Check if it's the player's piece
+    const isPlayerPiece = props.mode === 'multiplayer' 
+      ? currentPiece?.team === props.team
+      : currentPiece?.team === props.playerColor;
+    
+    if (activePiece && chessboard && isPlayerPiece) {
       // Calculate boundaries for the entire window
       const minX = 0;
       const minY = 0;
@@ -172,63 +270,92 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
         HORIZONTAL_AXIS.length - 1 - Math.floor((e.clientY - chessboard.offsetTop) / GRID_SIZE) :
         Math.floor((e.clientY - chessboard.offsetTop) / GRID_SIZE);
 
-      const currentPiece = pieces.find((p) => p.samePosition(grabPosition));
+      const currentPiece = props.pieces.find((p) => p.samePosition(grabPosition));
       const newPosition = new Position(x, y);
-
-      if (currentPiece) {
-        const success = playMove(currentPiece.clone(), newPosition);
+      
+      // Check if it's the player's piece
+      const isPlayerPiece = props.mode === 'multiplayer' 
+        ? currentPiece?.team === props.team
+        : currentPiece?.team === props.playerColor;
+        
+      if (currentPiece && isPlayerPiece) {
+        const success = props.playMove(currentPiece.clone(), newPosition);
+        
         if (success) {
-          // Update last move highlights when the local player makes a move
+          // Update last move highlights when player makes a move
           setLastMoveSource(grabPosition);
           setLastMoveDestination(newPosition);
           
-          // Determine move type
-          let moveType = 'normal';
-          
-          // Check if it's a capture move
-          const isCapture = pieces.some(p => 
-            p.position.samePosition(newPosition) && p.team !== currentPiece.team
-          );
-          
-          // Check if it's a castle move (king moves 2 squares)
-          const isCastle = currentPiece.type === 'king' && 
-            Math.abs(grabPosition.x - newPosition.x) === 2;
+          if (props.mode === 'multiplayer') {
+            // Determine move type for multiplayer
+            let moveType = 'normal';
             
-          // Check for promotion (pawn reaches the end)
-          const isPromotion = currentPiece.type === 'pawn' && 
-            (newPosition.y === 0 || newPosition.y === 7);
+            // Check if it's a capture move
+            const isCapture = props.pieces.some(p => 
+              p.position.samePosition(newPosition) && p.team !== currentPiece.team
+            );
             
-          if (isCapture) {
-            moveType = 'capture';
-          } else if (isCastle) {
-            moveType = 'castle';
-          } else if (isPromotion) {
-            moveType = 'promote';
+            // Check if it's a castle move (king moves 2 squares)
+            const isCastle = currentPiece.type === 'king' && 
+              Math.abs(grabPosition.x - newPosition.x) === 2;
+              
+            // Check for promotion (pawn reaches the end)
+            const isPromotion = currentPiece.type === 'pawn' && 
+              (newPosition.y === 0 || newPosition.y === 7);
+              
+            if (isCapture) {
+              moveType = 'capture';
+            } else if (isCastle) {
+              moveType = 'castle';
+            } else if (isPromotion) {
+              moveType = 'promote';
+            }
+            
+            // Add the move to the move history
+            const newMove: MoveRecord = {
+              piece: currentPiece.type,
+              from: grabPosition.clone(),
+              to: newPosition.clone(),
+              team: currentPiece.team as 'w' | 'b',
+              capture: isCapture,
+              check: false, // We'll know this after the move is processed
+              promotion: isPromotion,
+              castle: isCastle ? 
+                (newPosition.x === 6 ? 'kingside' : 'queenside') : undefined
+            };
+            
+            props.setMoveHistory(prev => [...prev, newMove]);
+            
+            // Emit move to server for multiplayer
+            socket.emit("makeMove", { 
+              roomId: props.roomId, 
+              piece: currentPiece, 
+              position: newPosition,
+              moveType,
+              highlightSource: grabPosition,
+              highlightDestination: newPosition
+            });
+          } else if (props.mode === 'bot') {
+            // Bot mode handling
+            // Check if the move was a capture
+            const isCapture = props.pieces.some(p => 
+              p.team !== props.playerColor && 
+              p.position.samePosition(newPosition)
+            );
+            
+            // Add player's move to history
+            const newMove: MoveRecord = {
+              piece: currentPiece.type,
+              from: grabPosition.clone(),
+              to: newPosition.clone(),
+              team: currentPiece.team as 'w' | 'b',
+              capture: isCapture,
+              check: props.gameStatus === 'Check!', // Set check based on the current game status
+              // Other properties would be determined from actual move data
+            };
+            
+            props.setMoveHistory(prev => [...prev, newMove]);
           }
-          
-          // Add the move to the move history
-          const newMove: MoveRecord = {
-            piece: currentPiece.type,
-            from: grabPosition.clone(),
-            to: newPosition.clone(),
-            team: currentPiece.team as 'w' | 'b',
-            capture: isCapture,
-            check: false, // We'll know this after the move is processed
-            promotion: isPromotion,
-            castle: isCastle ? 
-              (newPosition.x === 6 ? 'kingside' : 'queenside') : undefined
-          };
-          
-          setMoveHistory(prev => [...prev, newMove]);
-          
-          socket.emit("makeMove", { 
-            roomId, 
-            piece: currentPiece, 
-            position: newPosition,
-            moveType,
-            highlightSource: grabPosition,
-            highlightDestination: newPosition
-          });
         } else {
           // Reset piece position if move failed
           activePiece.style.position = "relative";
@@ -242,14 +369,16 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
   }
 
   async function copyRoomId() {
-      try {
-          console.log('Room ID before copy:', roomId, 'Type:', typeof roomId);
-          await navigator.clipboard.writeText(roomId);
-          toast.success('Room ID copied!');
-      } catch (err) {
-          toast.error('Could not copy Room ID');
-          console.error(err);
-      }
+    if (props.mode !== 'multiplayer') return;
+    
+    try {
+      console.log('Room ID before copy:', props.roomId, 'Type:', typeof props.roomId);
+      await navigator.clipboard.writeText(props.roomId);
+      toast.success('Room ID copied!');
+    } catch (err) {
+      toast.error('Could not copy Room ID');
+      console.error(err);
+    }
   }
 
   const getInitials = (name: string | undefined): string => {
@@ -278,27 +407,48 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Format difficulty level text for bot mode
+  const getDifficultyText = (difficulty: BotDifficulty): string => {
+    switch (difficulty) {
+      case BotDifficulty.EASY:
+        return "Easy";
+      case BotDifficulty.MEDIUM:
+        return "Medium";
+      case BotDifficulty.HARD:
+        return "Hard";
+      default:
+        return "Unknown";
+    }
+  };
+
   // Render the board
   let board = [];
-  const isWhiteTeam = team === 'w';
-
+  
   for (let j = 0; j < VERTICAL_AXIS.length; j++) {
     const row = isWhiteTeam ? VERTICAL_AXIS.length - 1 - j : j;
     for (let i = 0; i < HORIZONTAL_AXIS.length; i++) {
       const number = row + i + 2;
-      const piece = pieces.find((p) => p.samePosition(new Position(i, row)));
+      const piece = props.pieces.find((p) => p.samePosition(new Position(i, row)));
       let image = piece ? piece.image : undefined;
 
-      let currentPiece = activePiece != null ? pieces.find((p) => p.samePosition(grabPosition)) : undefined;
+      let currentPiece = activePiece != null ? props.pieces.find((p) => p.samePosition(grabPosition)) : undefined;
       let highlight = currentPiece?.possibleMoves ?
         currentPiece.possibleMoves.some((p) => p.samePosition(new Position(i, row))) : false;
       
       // Check if this is a capturable opponent piece
       let isCapturable = false;
-      if (highlight && piece && piece.team !== team) {
-        isCapturable = true;
+      if (highlight && piece) {
+        const playerTeam = props.mode === 'multiplayer' ? props.team : props.playerColor;
+        if (piece.team !== playerTeam) {
+          isCapturable = true;
+        }
       }
       
+      // Check if this tile contains the king in check (bot mode only)
+      const isKingInCheck = props.mode === 'bot' && props.isCheck && piece && 
+        piece.type === PieceType.KING && 
+        piece.team === props.playerColor;
+        
       // Check if this tile is part of the last move
       const isLastMoveSource = lastMoveSource?.samePosition(new Position(i, row)) || false;
       const isLastMoveDestination = lastMoveDestination?.samePosition(new Position(i, row)) || false;
@@ -309,15 +459,14 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
           image={image} 
           number={number} 
           highlight={highlight} 
-          capturable={isCapturable} 
+          capturable={isCapturable}
+          inCheck={!!isKingInCheck}
           lastMoveSource={isLastMoveSource}
           lastMoveDestination={isLastMoveDestination}
         />
       );
     }
   }
-
-  
 
   return (
     <>
@@ -329,37 +478,70 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
           </div>
           
           <div className="turn-counter">
-            <span>Turn: {totalTurns}</span>
+            <span>Turn: {props.totalTurns || 0}</span>
           </div>
+          
+          {/* Bot difficulty display (bot mode only) */}
+          {props.mode === 'bot' && (
+            <div className="bot-difficulty">
+              <span>Difficulty: {getDifficultyText(props.botDifficulty)}</span>
+            </div>
+          )}
           
           <div className="lower">
             <h3>Players</h3>
             
-            {/* White player with timer */}
-            <div className={`user ${activeTimer === 'white' ? 'active-timer' : ''}`}>
-              <div className="user-info">
-                <img src={generateAvatar(pl1)} alt="avatar-logo" />
-                <span>{pl1 || "White"}</span>
-              </div>
-              <div className="timer-display">
-                {formatTime(whiteTime)}
-              </div>
-            </div>
+            {props.mode === 'multiplayer' ? (
+              <>
+                {/* White player with timer */}
+                <div className={`user ${activeTimer === 'white' ? 'active-timer' : ''}`}>
+                  <div className="user-info">
+                    <img src={generateAvatar(pl1)} alt="avatar-logo" />
+                    <span>{pl1 || "White"}</span>
+                  </div>
+                  <div className="timer-display">
+                    {formatTime(whiteTime || 0)}
+                  </div>
+                </div>
+                
+                {/* Black player with timer */}
+                <div className={`user ${activeTimer === 'black' ? 'active-timer' : ''}`}>
+                  <div className="user-info">
+                    <img src={generateAvatar(pl2)} alt="avatar-logo" />
+                    <span>{pl2 || "Black"}</span>
+                  </div>
+                  <div className="timer-display">
+                    {formatTime(blackTime || 0)}
+                  </div>
+                </div>
+                
+                <button onClick={copyRoomId} className="roomBtn">COPY ROOM ID</button>
+              </>
+            ) : (
+              <>
+                {/* Bot mode players */}
+                <div className={`user ${(props.playerColor === 'w' && props.isPlayerTurn) || (props.playerColor === 'b' && !props.isPlayerTurn) ? 'active-timer' : ''}`}>
+                  <div className="user-info">
+                    <img src={generateAvatar(props.playerColor === 'w' ? props.playerName : 'Bot')} alt="avatar-logo" />
+                    <span>{props.playerColor === 'w' ? props.playerName : 'Bot'}</span>
+                  </div>
+                </div>
+                
+                <div className={`user ${(props.playerColor === 'b' && props.isPlayerTurn) || (props.playerColor === 'w' && !props.isPlayerTurn) ? 'active-timer' : ''}`}>
+                  <div className="user-info">
+                    <img src={generateAvatar(props.playerColor === 'b' ? props.playerName : 'Bot')} alt="avatar-logo" />
+                    <span>{props.playerColor === 'b' ? props.playerName : 'Bot'}</span>
+                  </div>
+                </div>
+              </>
+            )}
             
-            {/* Black player with timer */}
-            <div className={`user ${activeTimer === 'black' ? 'active-timer' : ''}`}>
-              <div className="user-info">
-                <img src={generateAvatar(pl2)} alt="avatar-logo" />
-                <span>{pl2 || "Black"}</span>
-              </div>
-              <div className="timer-display">
-                {formatTime(blackTime)}
-              </div>
-            </div>
-            
-            <button onClick={copyRoomId} className="roomBtn">COPY ROOM ID</button>
-            <button onClick={leaveRoom} className="leave-btn sidebar-leave-btn">
-                Leave Room
+            {/* Leave button */}
+            <button 
+              onClick={props.mode === 'multiplayer' ? props.leaveRoom : props.leaveGame} 
+              className="leave-btn sidebar-leave-btn"
+            >
+              Leave {props.mode === 'multiplayer' ? 'Room' : 'Game'}
             </button>
           </div>
         </div>
@@ -374,7 +556,10 @@ export default function Chessboard({ playMove, pieces, team, roomId, totalTurns 
         </div>
         
         {/* Add Move History Sidebar */}
-        <MoveHistorySidebar moves={moveHistory} playerColor={team as 'w' | 'b'} />
+        <MoveHistorySidebar 
+          moves={props.moveHistory} 
+          playerColor={props.mode === 'multiplayer' ? (props.team as 'w' | 'b') : props.playerColor} 
+        />
       </div>
     </>
   );
