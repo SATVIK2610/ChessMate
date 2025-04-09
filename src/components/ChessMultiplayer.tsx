@@ -20,7 +20,7 @@ import { MoveRecord } from "./MoveHistory/MoveHistorySidebar";
 // Game modes
 type GameMode = 'pvp' | 'bot' | null;
 
-const socket: Socket = io("http://localhost:4000");
+const socket: Socket = io("https://chessmatebackend-production-d71d.up.railway.app/");
 
 const ChessMultiplayer: React.FC<{ 
   playMove: (piece: Piece, pos: Position) => boolean; 
