@@ -69,17 +69,27 @@ export default function Chessboard(props: Props) {
   
   // Handle bot mode highlighting
   useEffect(() => {
-    if (props.mode === 'bot' && props.botLastMoveSource && props.botLastMoveDestination) {
-      setLastMoveSource(props.botLastMoveSource);
-      setLastMoveDestination(props.botLastMoveDestination);
+    // Only run this effect for bot mode
+    if (props.mode !== 'bot') return;
+    
+    // Now we can safely cast to BotProps
+    const botProps = props as BotProps;
+    if (botProps.botLastMoveSource && botProps.botLastMoveDestination) {
+      setLastMoveSource(botProps.botLastMoveSource);
+      setLastMoveDestination(botProps.botLastMoveDestination);
     }
-  }, [props.mode === 'bot' ? [props.botLastMoveSource, props.botLastMoveDestination] : []]);
+    // We only include props.mode in the dependency array because 
+    // the other props are conditionally accessed based on props.mode
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.mode]);
 
   // Multiplayer socket setup
   useEffect(() => {
     if (props.mode !== 'multiplayer') return;
     
-    const { team, roomId } = props;
+    // Now we can safely cast to MultiplayerProps
+    const multiplayerProps = props as MultiplayerProps;
+    const { team } = multiplayerProps;
     
     socket.on("opponentMove", (moveData: { 
       piece: Piece; 
@@ -148,25 +158,36 @@ export default function Chessboard(props: Props) {
       socket.off("opponentMove");
       socket.off('userList');
     };
-  }, [props.mode === 'multiplayer' ? [props.playMove, props.team] : []]);
+    // We omit team from dependencies because it's only used when mode is 'multiplayer'
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.mode, props.playMove, props.setMoveHistory]);
 
   // Bot mode - update move history when bot makes a move
   useEffect(() => {
     if (props.mode !== 'bot') return;
     
-    const { botLastMoveSource, botLastMoveDestination, isPlayerTurn, pieces, playerColor, isCheck } = props;
+    // Cast to BotProps safely since we've checked mode
+    const botProps = props as BotProps;
+    const { 
+      botLastMoveSource, 
+      botLastMoveDestination, 
+      isPlayerTurn, 
+      pieces, 
+      playerColor, 
+      isCheck 
+    } = botProps;
     
     if (botLastMoveSource && botLastMoveDestination && !isPlayerTurn) {
       // Find the piece that moved
       const movedPiece = pieces.find(
-        p => p.position.samePosition(botLastMoveDestination!) && p.team !== playerColor
+        p => p.position.samePosition(botLastMoveDestination) && p.team !== playerColor
       );
       
       if (movedPiece) {
         // Check if the move was a capture
         const isCapture = pieces.some(p => 
           p.team === playerColor && 
-          p.position.samePosition(botLastMoveDestination!)
+          p.position.samePosition(botLastMoveDestination)
         );
         
         // Add bot's move to history
@@ -183,7 +204,9 @@ export default function Chessboard(props: Props) {
         props.setMoveHistory(prev => [...prev, newMove]);
       }
     }
-  }, [props.mode === 'bot' ? [props.botLastMoveSource, props.botLastMoveDestination, props.isPlayerTurn, props.pieces, props.playerColor, props.isCheck] : []]);
+    // We only include base dependencies and handle bot-specific props conditionally
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.mode, props.pieces, props.setMoveHistory]);
 
   function getPieceAtTile(e: React.MouseEvent): Piece | undefined {
     const chessboard = chessboardRef.current;

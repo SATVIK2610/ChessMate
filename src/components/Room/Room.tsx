@@ -23,7 +23,7 @@ const Room: React.FC<{
         setSoundMuted(newMutedState);
     };
 
-    const handleJoinRoom = () => {
+    const handleJoinRoom = useCallback(() => {
         if (!username.trim()) {
             toast.error('Username is required!');
             return;
@@ -56,9 +56,9 @@ const Room: React.FC<{
         setPl2(username);
         
         joinRoom(cleanRoomId, username);
-    };
+    }, [username, roomIdInput, setRoomId, setPl2, joinRoom]);
 
-    const handleCreateRoom = () => {
+    const handleCreateRoom = useCallback(() => {
         if (!username.trim()) {
             toast.error('Username is required!');
             return;
@@ -66,9 +66,9 @@ const Room: React.FC<{
 
         setPl1(username);
         createRoom(username);
-    };
+    }, [username, setPl1, createRoom]);
     
-    const handleStartBotGame = () => {
+    const handleStartBotGame = useCallback(() => {
         if (!username.trim()) {
             toast.error('Username is required!');
             return;
@@ -80,7 +80,7 @@ const Room: React.FC<{
             setPl2(username);
             startBotGame(username, botDifficulty);
         }
-    };
+    }, [username, botDifficulty, setPl1, setPl2, startBotGame]);
     
     // Handle Enter key press - now defined after the functions it uses
     const handleKeyPress = useCallback((e: KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => {

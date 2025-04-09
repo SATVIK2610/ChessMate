@@ -77,7 +77,7 @@ const ChessMultiplayer: React.FC<{
       toast.error('Check!', { icon: '♔' });
       chessAudio.playSound(ChessSoundType.MOVE_CHECK);
     }
-  }, [botGameRef?.gameStatus]);
+  }, [botGameRef, botGameRef?.gameStatus]);
 
   // Function to update timers (to fix type issues)
   const updateWhiteTime = useCallback((newTime: number) => {
@@ -309,6 +309,17 @@ const ChessMultiplayer: React.FC<{
     };
   }, [playMove, setRoomId, setTimer, timer, updateWhiteTime, updateBlackTime, setGameStarted, activeTimer, setActiveTimer, setPl1, setPl2, gameStarted, timersInitialized, userList, team, resetGameState, gameMode]);
 
+  // Define handleTimeUp before the useEffect that needs it
+  const handleTimeUp = useCallback((color: 'white' | 'black') => {
+    // Check which team has more time left
+    const winner = color === 'white' ? 'black' : 'white';
+    toast.success(`${winner === 'white' ? 'White' : 'Black'} team wins on time!`);
+    
+    // Reset the game
+    setGameStarted(false);
+    setActiveTimer(null);
+  }, [setGameStarted, setActiveTimer]);
+
   // Timer countdown effect for PvP games
   useEffect(() => {
     if (gameMode !== 'pvp' || !gameStarted || !activeTimer) return;
@@ -332,17 +343,7 @@ const ChessMultiplayer: React.FC<{
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [gameMode, gameStarted, activeTimer, whiteTime, blackTime, updateWhiteTime, updateBlackTime]);
-
-  const handleTimeUp = (color: 'white' | 'black') => {
-    // Check which team has more time left
-    const winner = color === 'white' ? 'black' : 'white';
-    toast.success(`${winner === 'white' ? 'White' : 'Black'} team wins on time!`);
-    
-    // Reset the game
-    setGameStarted(false);
-    setActiveTimer(null);
-  };
+  }, [gameMode, gameStarted, activeTimer, whiteTime, blackTime, updateWhiteTime, updateBlackTime, handleTimeUp]);
 
   const createRoom = (username: string) => {
     setGameMode('pvp');
