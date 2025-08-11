@@ -20,7 +20,7 @@ import { MoveRecord } from "./MoveHistory/MoveHistorySidebar";
 // Game modes
 type GameMode = 'pvp' | 'bot' | null;
 
-const socket: Socket = io("https://chessmate-backend-udzj.onrender.com");
+const socket: Socket = io("https://chessmate-backend-udzj.onrender.com/");
 
 const ChessMultiplayer: React.FC<{ 
   playMove: (piece: Piece, pos: Position) => boolean; 
