@@ -10,7 +10,7 @@ import MoveHistorySidebar, { MoveRecord } from "../MoveHistory/MoveHistorySideba
 import { PieceType } from "../../Types";
 import { BotDifficulty } from "../../lib/bot/engine";
 
-const socket: Socket = io("https://chessmate-backend-udzj.onrender.com");
+const socket: Socket = io("https://chessmate-backend-udzj.onrender.com/");
 
 interface BaseProps {
   playMove: (piece: Piece, position: Position) => boolean;
